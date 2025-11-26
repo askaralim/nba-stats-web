@@ -59,27 +59,52 @@ npm run preview
 
 ## Deployment
 
-The frontend can be deployed to:
+### Vercel Deployment (Recommended)
 
-- **Vercel** (recommended for React apps)
+Vercel is the recommended platform for deploying React/Vite applications.
+
+**Quick Steps:**
+
+1. **Push to GitHub** (if not already done)
+   ```bash
+   git add .
+   git commit -m "Prepare for Vercel deployment"
+   git push
+   ```
+
+2. **Deploy on Vercel**
+   - Go to [vercel.com](https://vercel.com)
+   - Click "Add New..." → "Project"
+   - Import your GitHub repository
+   - Vercel will auto-detect Vite configuration
+
+3. **Set Environment Variable**
+   - Add `VITE_API_URL` with your Railway API URL:
+     ```
+     VITE_API_URL=https://your-railway-app.up.railway.app
+     ```
+
+4. **Deploy**
+   - Click "Deploy"
+   - Get your frontend URL (e.g., `https://your-app.vercel.app`)
+
+5. **Update Backend CORS**
+   - In Railway, set `CORS_ORIGIN` to your Vercel URL
+
+**Detailed instructions**: See [DEPLOYMENT.md](./DEPLOYMENT.md)
+
+### Other Deployment Options
+
+The frontend can also be deployed to:
 - **Netlify**
 - **GitHub Pages**
 - **AWS S3 + CloudFront**
 - **Any static hosting service**
 
-### Vercel Deployment
-
-1. Connect your repository
-2. Set build command: `npm run build`
-3. Set output directory: `dist`
-4. Add environment variable: `VITE_API_URL=https://your-api-domain.com`
-
-### Netlify Deployment
-
-1. Connect your repository
-2. Build command: `npm run build`
-3. Publish directory: `dist`
-4. Add environment variable: `VITE_API_URL=https://your-api-domain.com`
+For all platforms, remember to:
+- Set `VITE_API_URL` environment variable
+- Configure CORS on your backend
+- Set output directory to `dist` (Vite default)
 
 ## Project Structure
 
