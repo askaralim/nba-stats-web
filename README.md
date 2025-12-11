@@ -1,14 +1,17 @@
 # NBA Stats Web
 
-Modern React web application for NBA statistics.
+Modern React web application for NBA statistics with Chinese localization.
 
 ## Features
 
-- **Games Today**: View all NBA games scheduled for today with live scores
-- **Game Details**: Detailed view with score by period and game leaders
-- **Player Details**: Player statistics (coming soon)
+- **Games Today**: View NBA games for any date with live scores and date navigation
+- **Game Details**: Detailed game view with boxscore, player statistics, and period-by-period scores
+- **Player Statistics**: View top players by various statistical categories (points, assists, rebounds, etc.)
+- **Team Standings**: Current NBA standings organized by conference
 - **Auto-refresh**: Live games automatically refresh every 2 seconds
-- **Modern UI**: Clean, flat design focused on data presentation
+- **Date Navigation**: Browse games by date with timezone-aware date selection
+- **Chinese Localization**: All UI text in Chinese with China Standard Time (GMT+8) support
+- **Modern UI**: Clean, responsive design with loading states and error handling
 
 ## Tech Stack
 
@@ -111,16 +114,25 @@ For all platforms, remember to:
 ```
 src/
 ├── components/      # Reusable components
-│   ├── GameCard.jsx
-│   └── Navigation.jsx
+│   ├── GameCard.jsx      # Game card component
+│   └── Navigation.jsx    # Top navigation bar
 ├── pages/          # Page components
-│   ├── GamesToday.jsx
-│   ├── GameDetails.jsx
-│   └── PlayerDetails.jsx
+│   ├── GamesToday.jsx    # Games list with date navigator
+│   ├── GameDetails.jsx   # Game details with boxscore
+│   ├── PlayerStats.jsx   # Player statistics by category
+│   ├── TeamsList.jsx     # Team standings
+│   └── PlayerDetails.jsx # Player details (placeholder)
 ├── config.js       # Configuration (API URLs)
 ├── App.jsx         # Main app with routing
 └── main.jsx        # Entry point
 ```
+
+## Routes
+
+- `/` or `/games` - Games Today page
+- `/games/:gameId` - Game Details page
+- `/teams` - Team Standings page
+- `/stats/players` - Player Statistics page
 
 ## API Integration
 

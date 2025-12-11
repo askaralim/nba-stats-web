@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
 
@@ -8,7 +8,7 @@ function GameDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchGameDetails = async () => {
+  const fetchGameDetails = useCallback(async () => {
     try {
       setError(null);
       const response = await fetch(`${API_BASE_URL}/api/nba/games/${gameId}`);
@@ -23,7 +23,7 @@ function GameDetails() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [gameId]);
 
   useEffect(() => {
     fetchGameDetails();
@@ -36,7 +36,7 @@ function GameDetails() {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [gameId, game?.gameStatus]);
+  }, [gameId, game?.gameStatus, fetchGameDetails]);
 
   if (loading) {
     return (
@@ -176,12 +176,10 @@ function GameDetails() {
         {game.gameStatus === 1 && game.gameEt && (
           <div className="text-center text-gray-600">
             {new Date(game.gameEt).toLocaleString('zh-CN', {
-              weekday: 'long',
-              month: 'long',
-              day: 'numeric',
-              hour: 'numeric',
+              hour: '2-digit',
               minute: '2-digit',
-              timeZoneName: 'short'
+              timeZone: 'Asia/Shanghai',
+              hour12: false
             })}
           </div>
         )}
@@ -240,75 +238,166 @@ function GameDetails() {
         </div>
       )}
 
-      {/* Game Leaders */}
-      {game.gameLeaders && (
+      {/* Boxscore */}
+      {game.boxscore && game.boxscore.teams && (
         <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">球星</h2>
-          <div className="grid grid-cols-2 gap-6">
-            {/* Away Team Leader */}
-            {game.gameLeaders.awayLeaders && (
-              <div>
-                <h3 className="font-semibold text-gray-700 mb-2">
-                  {game.awayTeam.teamTricode}
-                </h3>
-                <p className="text-lg font-bold text-gray-900 mb-4">
-                  {game.gameLeaders.awayLeaders.name}
-                </p>
-                <div className="space-y-2">
-                  <div className="text-gray-700">
-                    <span className="text-gray-600">得分：</span>
-                    <span className="font-semibold text-gray-900 ml-2">
-                      {game.gameLeaders.awayLeaders.points}
-                    </span>
-                  </div>
-                  <div className="text-gray-700">
-                    <span className="text-gray-600">篮板：</span>
-                    <span className="font-semibold text-gray-900 ml-2">
-                      {game.gameLeaders.awayLeaders.rebounds}
-                    </span>
-                  </div>
-                  <div className="text-gray-700">
-                    <span className="text-gray-600">助攻：</span>
-                    <span className="font-semibold text-gray-900 ml-2">
-                      {game.gameLeaders.awayLeaders.assists}
-                    </span>
-                  </div>
-                </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">球员数据</h2>
+          {game.boxscore.teams.map((team, teamIndex) => (
+            <div key={team.teamId} className={teamIndex > 0 ? 'mt-8' : ''}>
+              {/* Team Header */}
+              <div className="flex items-center mb-4">
+                <img
+                  src={team.teamLogo}
+                  alt={team.teamName}
+                  className="w-8 h-8 object-contain mr-3"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+                <h3 className="text-lg font-bold text-gray-900">{team.teamName}</h3>
               </div>
-            )}
 
-            {/* Home Team Leader */}
-            {game.gameLeaders.homeLeaders && (
-              <div>
-                <h3 className="font-semibold text-gray-700 mb-2">
-                  {game.homeTeam.teamTricode}
-                </h3>
-                <p className="text-lg font-bold text-gray-900 mb-4">
-                  {game.gameLeaders.homeLeaders.name}
-                </p>
-                <div className="space-y-2">
-                  <div className="text-gray-700">
-                    <span className="text-gray-600">得分：</span>
-                    <span className="font-semibold text-gray-900 ml-2">
-                      {game.gameLeaders.homeLeaders.points}
-                    </span>
-                  </div>
-                  <div className="text-gray-700">
-                    <span className="text-gray-600">篮板：</span>
-                    <span className="font-semibold text-gray-900 ml-2">
-                      {game.gameLeaders.homeLeaders.rebounds}
-                    </span>
-                  </div>
-                  <div className="text-gray-700">
-                    <span className="text-gray-600">助攻：</span>
-                    <span className="font-semibold text-gray-900 ml-2">
-                      {game.gameLeaders.homeLeaders.assists}
-                    </span>
+              {/* Starters */}
+              {team.starters && team.starters.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">首发</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-2 px-2 font-semibold text-gray-700">球员</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">MIN</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">PTS</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">FG</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">3PT</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">FT</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">REB</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">AST</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">TO</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">STL</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">BLK</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">OREB</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">DREB</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">PF</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">+/-</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {team.starters.map((player, idx) => (
+                          <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="py-2 px-2">
+                              <div className="flex items-center">
+                                {player.headshot && (
+                                  <img
+                                    src={player.headshot}
+                                    alt={player.name}
+                                    className="w-6 h-6 rounded-full mr-2 object-cover"
+                                    onError={(e) => {
+                                      e.target.style.display = 'none';
+                                    }}
+                                  />
+                                )}
+                                <div>
+                                  <div className="font-medium text-gray-900">{player.name}</div>
+                                  <div className="text-xs text-gray-500">{player.position} #{player.jersey}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.minutes}</td>
+                            <td className="text-center py-2 px-2 font-semibold text-gray-900">{player.stats.points}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.fieldGoals}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.threePointers}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.freeThrows}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.rebounds}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.assists}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.turnovers}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.steals}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.blocks}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.offensiveRebounds}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.defensiveRebounds}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.fouls}</td>
+                            <td className={`text-center py-2 px-2 ${player.stats.plusMinus >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {player.stats.plusMinus >= 0 ? '+' : ''}{player.stats.plusMinus}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+
+              {/* Bench */}
+              {team.bench && team.bench.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">替补</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left py-2 px-2 font-semibold text-gray-700">球员</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">MIN</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">PTS</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">FG</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">3PT</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">FT</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">REB</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">AST</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">TO</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">STL</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">BLK</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">OREB</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">DREB</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">PF</th>
+                          <th className="text-center py-2 px-2 font-semibold text-gray-700">+/-</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {team.bench.map((player, idx) => (
+                          <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="py-2 px-2">
+                              <div className="flex items-center">
+                                {player.headshot && (
+                                  <img
+                                    src={player.headshot}
+                                    alt={player.name}
+                                    className="w-6 h-6 rounded-full mr-2 object-cover"
+                                    onError={(e) => {
+                                      e.target.style.display = 'none';
+                                    }}
+                                  />
+                                )}
+                                <div>
+                                  <div className="font-medium text-gray-900">{player.name}</div>
+                                  <div className="text-xs text-gray-500">{player.position} #{player.jersey}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.minutes}</td>
+                            <td className="text-center py-2 px-2 font-semibold text-gray-900">{player.stats.points}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.fieldGoals}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.threePointers}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.freeThrows}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.rebounds}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.assists}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.turnovers}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.steals}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.blocks}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.offensiveRebounds}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.defensiveRebounds}</td>
+                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.fouls}</td>
+                            <td className={`text-center py-2 px-2 ${player.stats.plusMinus >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {player.stats.plusMinus >= 0 ? '+' : ''}{player.stats.plusMinus}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
 

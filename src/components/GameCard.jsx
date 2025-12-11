@@ -99,12 +99,10 @@ function GameCard({ game }) {
         {game.gameStatus === 1 && game.gameEt && (
           <div className="mt-4 pt-4 border-t border-gray-100 text-sm text-gray-500 text-center">
             {new Date(game.gameEt).toLocaleString('zh-CN', {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-              hour: 'numeric',
+              hour: '2-digit',
               minute: '2-digit',
-              timeZoneName: 'short'
+              timeZone: 'Asia/Shanghai',
+              hour12: false
             })}
           </div>
         )}

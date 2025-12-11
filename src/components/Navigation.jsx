@@ -27,14 +27,24 @@ function Navigation() {
                 今日比赛
               </Link>
               <Link
-                to="/players"
+                to="/teams"
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive('/players')
+                  isActive('/teams')
                     ? 'bg-gray-100 text-gray-900'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                 }`}
               >
-                球员列表
+                球队列表
+              </Link>
+              <Link
+                to="/stats/players"
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  isActive('/stats/players')
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                球员数据
               </Link>
             </div>
           </div>

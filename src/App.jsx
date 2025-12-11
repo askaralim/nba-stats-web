@@ -3,6 +3,8 @@ import Navigation from './components/Navigation';
 import GamesToday from './pages/GamesToday';
 import GameDetails from './pages/GameDetails';
 import PlayerDetails from './pages/PlayerDetails';
+import TeamsList from './pages/TeamsList';
+import PlayerStats from './pages/PlayerStats';
 
 function App() {
   return (
@@ -15,6 +17,8 @@ function App() {
             <Route path="/games" element={<GamesToday />} />
             <Route path="/games/:gameId" element={<GameDetails />} />
             <Route path="/players/:playerId" element={<PlayerDetails />} />
+            <Route path="/teams" element={<TeamsList />} />
+            <Route path="/stats/players" element={<PlayerStats />} />
           </Routes>
         </main>
       </div>
