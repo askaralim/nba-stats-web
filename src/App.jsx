@@ -4,7 +4,9 @@ import GamesToday from './pages/GamesToday';
 import GameDetails from './pages/GameDetails';
 import PlayerDetails from './pages/PlayerDetails';
 import TeamsList from './pages/TeamsList';
+import TeamDetails from './pages/TeamDetails';
 import PlayerStats from './pages/PlayerStats';
+import News from './pages/News';
 
 function App() {
   return (
@@ -18,7 +20,9 @@ function App() {
             <Route path="/games/:gameId" element={<GameDetails />} />
             <Route path="/players/:playerId" element={<PlayerDetails />} />
             <Route path="/teams" element={<TeamsList />} />
+            <Route path="/teams/:teamAbbreviation" element={<TeamDetails />} />
             <Route path="/stats/players" element={<PlayerStats />} />
+            <Route path="/news" element={<News />} />
           </Routes>
         </main>
       </div>

@@ -131,17 +131,27 @@ function GameDetails() {
         <div className="grid grid-cols-2 gap-8 mb-6">
           {/* Away Team */}
           <div className="text-center">
-            <img
-              src={game.awayTeam.logo}
-              alt={game.awayTeam.teamName}
-              className="w-24 h-24 mx-auto mb-4 object-contain"
-              onError={(e) => {
-                e.target.style.display = 'none';
-              }}
-            />
-            <h2 className="text-xl font-bold text-gray-900 mb-1">
-              {game.awayTeam.teamCity} {game.awayTeam.teamName}
-            </h2>
+            <Link
+              to={`/teams/${game.awayTeam.teamTricode?.toLowerCase() || game.awayTeam.teamId}`}
+              className="block hover:opacity-80 transition-opacity"
+            >
+              <img
+                src={game.awayTeam.logo}
+                alt={game.awayTeam.teamName}
+                className="w-24 h-24 mx-auto mb-4 object-contain cursor-pointer"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            </Link>
+            <Link
+              to={`/teams/${game.awayTeam.teamTricode?.toLowerCase() || game.awayTeam.teamId}`}
+              className="block hover:text-blue-600 transition-colors"
+            >
+              <h2 className="text-xl font-bold text-gray-900 mb-1">
+                {game.awayTeam.teamCity} {game.awayTeam.teamName}
+              </h2>
+            </Link>
             <p className="text-gray-600 mb-2">
               {game.awayTeam.wins}-{game.awayTeam.losses}
             </p>
@@ -152,17 +162,27 @@ function GameDetails() {
 
           {/* Home Team */}
           <div className="text-center">
-            <img
-              src={game.homeTeam.logo}
-              alt={game.homeTeam.teamName}
-              className="w-24 h-24 mx-auto mb-4 object-contain"
-              onError={(e) => {
-                e.target.style.display = 'none';
-              }}
-            />
-            <h2 className="text-xl font-bold text-gray-900 mb-1">
-              {game.homeTeam.teamCity} {game.homeTeam.teamName}
-            </h2>
+            <Link
+              to={`/teams/${game.homeTeam.teamTricode?.toLowerCase() || game.homeTeam.teamId}`}
+              className="block hover:opacity-80 transition-opacity"
+            >
+              <img
+                src={game.homeTeam.logo}
+                alt={game.homeTeam.teamName}
+                className="w-24 h-24 mx-auto mb-4 object-contain cursor-pointer"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            </Link>
+            <Link
+              to={`/teams/${game.homeTeam.teamTricode?.toLowerCase() || game.homeTeam.teamId}`}
+              className="block hover:text-blue-600 transition-colors"
+            >
+              <h2 className="text-xl font-bold text-gray-900 mb-1">
+                {game.homeTeam.teamCity} {game.homeTeam.teamName}
+              </h2>
+            </Link>
             <p className="text-gray-600 mb-2">
               {game.homeTeam.wins}-{game.homeTeam.losses}
             </p>
@@ -208,7 +228,12 @@ function GameDetails() {
               <tbody>
                 <tr className="border-b border-gray-100">
                   <td className="py-3 px-4 font-medium text-gray-900">
-                    {game.awayTeam.teamCity} {game.awayTeam.teamName}
+                    <Link
+                      to={`/teams/${game.awayTeam.teamTricode?.toLowerCase() || game.awayTeam.teamId}`}
+                      className="hover:text-blue-600 transition-colors"
+                    >
+                      {game.awayTeam.teamCity} {game.awayTeam.teamName}
+                    </Link>
                   </td>
                   {game.awayTeam.periods.map((period, idx) => (
                     <td key={idx} className="text-center py-3 px-4 text-gray-700">
@@ -221,7 +246,12 @@ function GameDetails() {
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium text-gray-900">
-                    {game.homeTeam.teamCity} {game.homeTeam.teamName}
+                    <Link
+                      to={`/teams/${game.homeTeam.teamTricode?.toLowerCase() || game.homeTeam.teamId}`}
+                      className="hover:text-blue-600 transition-colors"
+                    >
+                      {game.homeTeam.teamCity} {game.homeTeam.teamName}
+                    </Link>
                   </td>
                   {game.homeTeam.periods.map((period, idx) => (
                     <td key={idx} className="text-center py-3 px-4 text-gray-700">
@@ -246,15 +276,22 @@ function GameDetails() {
             <div key={team.teamId} className={teamIndex > 0 ? 'mt-8' : ''}>
               {/* Team Header */}
               <div className="flex items-center mb-4">
-                <img
-                  src={team.teamLogo}
-                  alt={team.teamName}
-                  className="w-8 h-8 object-contain mr-3"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
-                />
-                <h3 className="text-lg font-bold text-gray-900">{team.teamName}</h3>
+                <Link
+                  to={`/teams/${team.teamAbbreviation?.toLowerCase() || team.teamId}`}
+                  className="flex items-center hover:opacity-80 transition-opacity"
+                >
+                  <img
+                    src={team.teamLogo}
+                    alt={team.teamName}
+                    className="w-8 h-8 object-contain mr-3 cursor-pointer"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                  <h3 className="text-lg font-bold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer">
+                    {team.teamName}
+                  </h3>
+                </Link>
               </div>
 
               {/* Starters */}

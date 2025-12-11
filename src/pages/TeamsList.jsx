@@ -131,7 +131,7 @@ function TeamsList() {
                         </td>
                         <td className="py-3 px-4">
                           <Link
-                            to={`/teams/${team.id}`}
+                            to={`/teams/${team.abbreviation?.toLowerCase() || team.id}`}
                             className="flex items-center space-x-3 hover:text-blue-600 transition-colors"
                           >
                             {team.logo && (
@@ -211,7 +211,7 @@ function TeamsList() {
                         </td>
                         <td className="py-3 px-4">
                           <Link
-                            to={`/teams/${team.id}`}
+                            to={`/teams/${team.abbreviation?.toLowerCase() || team.id}`}
                             className="flex items-center space-x-3 hover:text-red-600 transition-colors"
                           >
                             {team.logo && (

@@ -26,6 +26,16 @@ function Navigation() {
               >
                 今日比赛
               </Link>
+              {/* <Link
+                to="/news"
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  isActive('/news')
+                    ? 'bg-gray-100 text-gray-900'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                News!
+              </Link> */}
               <Link
                 to="/teams"
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
