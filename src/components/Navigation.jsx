@@ -26,7 +26,7 @@ function Navigation() {
               >
                 今日比赛
               </Link>
-              {/* <Link
+              <Link
                 to="/news"
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                   isActive('/news')
@@ -35,7 +35,7 @@ function Navigation() {
                 }`}
               >
                 News!
-              </Link> */}
+              </Link>
               <Link
                 to="/teams"
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${

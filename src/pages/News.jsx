@@ -110,17 +110,29 @@ function News() {
                       ))}
                     </div>
                   )}
-                  {tweet.timestamp && (
-                    <p className="text-gray-500 text-xs mt-3">
-                      {new Date(tweet.timestamp).toLocaleString('zh-CN', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  )}
+                  <div className="flex items-center justify-between mt-3">
+                    {tweet.timestamp && (
+                      <p className="text-gray-500 text-xs">
+                        {new Date(tweet.timestamp).toLocaleString('zh-CN', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    )}
+                    {tweet.link && (
+                      <a
+                        href={tweet.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 text-xs underline"
+                      >
+                        查看原文 →
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
