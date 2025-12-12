@@ -1,32 +1,52 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { API_BASE_URL } from '../config';
 
 function News() {
   const [tweets, setTweets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const fetchingRef = useRef(false); // Prevent concurrent requests (React StrictMode)
 
   useEffect(() => {
+    // Prevent double requests in development (React StrictMode)
+    if (fetchingRef.current) {
+      return;
+    }
+
     const fetchNews = async () => {
+      if (fetchingRef.current) {
+        return; // Already fetching
+      }
+      
+      fetchingRef.current = true;
+      
       try {
         setError(null);
         setLoading(true);
         
+        console.log('Fetching news from API...');
         const response = await fetch(`${API_BASE_URL}/api/nba/news`);
         if (!response.ok) {
           throw new Error('加载新闻失败');
         }
         const data = await response.json();
+        console.log(`Received ${data.tweets?.length || 0} tweets`);
         setTweets(data.tweets || []);
       } catch (err) {
         setError(err.message);
         console.error('Error fetching news:', err);
       } finally {
         setLoading(false);
+        fetchingRef.current = false;
       }
     };
 
     fetchNews();
+    
+    // Cleanup function
+    return () => {
+      fetchingRef.current = false;
+    };
   }, []);
 
   if (loading) {
@@ -58,7 +78,7 @@ function News() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">NBA 新闻</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">NBA News!</h1>
         <p className="text-gray-600">
           来自 <span className="font-semibold">@ShamsCharania</span> 的最新推文
         </p>
@@ -122,7 +142,7 @@ function News() {
                         })}
                       </p>
                     )}
-                    {tweet.link && (
+                    {/* {tweet.link && (
                       <a
                         href={tweet.link}
                         target="_blank"
@@ -131,7 +151,7 @@ function News() {
                       >
                         查看原文 →
                       </a>
-                    )}
+                    )} */}
                   </div>
                 </div>
               </div>
