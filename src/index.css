@@ -2,7 +2,24 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-black text-white;
+  }
+  
+  /* Twitter-style dark mode colors */
+  :root {
+    --bg-primary: #000000;
+    --bg-secondary: #16181c;
+    --bg-hover: #181818;
+    --border-color: #2f3336;
+    --text-primary: #ffffff;
+    --text-secondary: #71767a;
+    --text-muted: #8b98a5;
+  }
+  
+  /* Dark theme for select options */
+  select option {
+    background-color: #16181c;
+    color: #ffffff;
   }
 }
 
@@ -13,5 +30,11 @@
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+  
+  /* Smooth momentum scrolling for date selector */
+  .scrollbar-hide {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
   }
 }

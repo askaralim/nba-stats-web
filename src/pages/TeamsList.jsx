@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
+// eslint-disable-next-line no-unused-vars
+import { motion } from 'framer-motion';
 import { API_BASE_URL } from '../config';
 
 function TeamsList() {
@@ -41,16 +43,16 @@ function TeamsList() {
   };
 
   const getStreakColor = (streakType) => {
-    if (!streakType) return 'text-gray-600';
-    return streakType.toLowerCase().includes('win') ? 'text-green-600' : 'text-red-600';
+    if (!streakType) return 'text-[#71767a]';
+    return streakType.toLowerCase().includes('win') ? 'text-green-400' : 'text-red-400';
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"></div>
-          <p className="text-gray-600">加载排名中...</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#1d9bf0] mb-4"></div>
+          <p className="text-[#71767a]">加载排名中...</p>
         </div>
       </div>
     );
@@ -58,12 +60,12 @@ function TeamsList() {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-        <p className="text-red-800 font-semibold mb-2">加载排名失败</p>
-        <p className="text-red-600 text-sm mb-4">{error}</p>
+      <div className="bg-[#16181c] border border-[#2f3336] rounded-xl p-6 text-center">
+        <p className="text-white font-semibold mb-2">加载排名失败</p>
+        <p className="text-[#71767a] text-sm mb-4">{error}</p>
         <button
           onClick={fetchStandings}
-          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+          className="px-4 py-2 bg-[#1d9bf0] text-white rounded-full hover:bg-[#1a8cd8] transition-colors font-medium"
         >
           重试
         </button>
@@ -73,8 +75,8 @@ function TeamsList() {
 
   if (!standings || !standings.conferences) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-        <p className="text-gray-600 text-lg">未找到排名数据</p>
+      <div className="bg-[#16181c] rounded-xl border border-[#2f3336] p-12 text-center">
+        <p className="text-white text-lg">未找到排名数据</p>
       </div>
     );
   }
@@ -85,9 +87,9 @@ function TeamsList() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">NBA球队排名</h1>
+        <h1 className="text-3xl font-bold text-white mb-2">NBA球队排名</h1>
         {standings.seasonDisplayName && (
-          <p className="text-gray-600">
+          <p className="text-[#71767a]">
             {standings.seasonDisplayName} {standings.seasonType === 3 ? '季后赛' : '常规赛'}
           </p>
         )}
@@ -97,42 +99,52 @@ function TeamsList() {
         {/* Eastern Conference */}
         {eastConference && (
           <div>
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-lg p-4 text-white">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-t-xl p-4 text-white">
               <h2 className="text-2xl font-bold">{eastConference.name}</h2>
             </div>
-            <div className="bg-white border border-gray-200 rounded-b-lg overflow-hidden">
+            <motion.div 
+              className="bg-[#16181c] border border-[#2f3336] rounded-b-xl overflow-hidden"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+            >
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">排名</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">球队</th>
-                      <th className="text-center py-3 px-4 font-semibold text-gray-700 text-sm">胜</th>
-                      <th className="text-center py-3 px-4 font-semibold text-gray-700 text-sm">负</th>
-                      <th className="text-center py-3 px-4 font-semibold text-gray-700 text-sm">胜率</th>
-                      <th className="text-center py-3 px-4 font-semibold text-gray-700 text-sm">胜差</th>
-                      <th className="text-center py-3 px-4 font-semibold text-gray-700 text-sm">连胜</th>
+                  <thead>
+                    <tr className="border-b border-[#2f3336]/30">
+                      <th className="text-left py-3 px-4 font-medium text-white text-sm">排名</th>
+                      <th className="text-left py-3 px-4 font-medium text-white text-sm sticky left-0 z-10 bg-[#181818]">球队</th>
+                      <th className="text-center py-3 px-4 font-medium text-white text-sm">胜</th>
+                      <th className="text-center py-3 px-4 font-medium text-white text-sm">负</th>
+                      <th className="text-center py-3 px-4 font-medium text-white text-sm">胜率</th>
+                      <th className="text-center py-3 px-4 font-medium text-white text-sm">胜差</th>
+                      <th className="text-center py-3 px-4 font-medium text-white text-sm">连胜</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody>
                     {eastConference.teams.map((team, index) => (
-                      <tr
+                      <motion.tr
                         key={team.id}
-                        className="hover:bg-gray-50 transition-colors"
+                        className={`border-b border-[#2f3336]/20 transition-all duration-200 hover:bg-[#181818]/50 ${
+                          index % 2 === 0 ? 'bg-[#16181c]/30' : 'bg-[#16181c]/10'
+                        }`}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.2, delay: 0.15 + index * 0.03 }}
                       >
                         <td className="py-3 px-4">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                             team.playoffSeed <= 8
-                              ? 'bg-blue-100 text-blue-700'
-                              : 'bg-gray-100 text-gray-600'
+                              ? 'bg-blue-900/30 text-blue-400 border border-blue-800/50'
+                              : 'bg-[#181818] text-[#71767a] border border-[#2f3336]/30'
                           }`}>
                             {team.playoffSeed || index + 1}
                           </div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-4 sticky left-0 z-10 bg-inherit">
                           <Link
                             to={`/teams/${team.abbreviation?.toLowerCase() || team.id}`}
-                            className="flex items-center space-x-3 hover:text-blue-600 transition-colors"
+                            className="flex items-center space-x-3 hover:text-[#1d9bf0] transition-colors"
                           >
                             {team.logo && (
                               <img
@@ -145,74 +157,92 @@ function TeamsList() {
                               />
                             )}
                             <div>
-                              <div className="font-semibold text-gray-900">{team.name}</div>
-                              <div className="text-xs text-gray-500">{team.abbreviation}</div>
+                              <div className="font-semibold text-white">{team.name}</div>
+                              <div className="text-xs text-[#71767a]">{team.abbreviation}</div>
                             </div>
                           </Link>
                         </td>
-                        <td className="py-3 px-4 text-center text-gray-900 font-semibold">
+                        <td className="py-3 px-4 text-center text-white/90 font-semibold">
                           {team.wins ?? '-'}
                         </td>
-                        <td className="py-3 px-4 text-center text-gray-700">
+                        <td className="py-3 px-4 text-center text-white/90">
                           {team.losses ?? '-'}
                         </td>
-                        <td className="py-3 px-4 text-center text-gray-700">
+                        <td className="py-3 px-4 text-center text-white/90">
                           {formatWinPercent(team.winPercent)}%
                         </td>
-                        <td className="py-3 px-4 text-center text-gray-600 text-sm">
+                        <td className="py-3 px-4 text-center text-[#71767a] text-sm">
                           {formatGamesBehind(team.gamesBehind)}
                         </td>
-                        <td className={`py-3 px-4 text-center text-sm font-semibold ${getStreakColor(team.streakType)}`}>
-                          {team.streakType || '-'}
+                        <td className="py-3 px-4 text-center">
+                          <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            getStreakColor(team.streakType) === 'text-green-400' 
+                              ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                              : getStreakColor(team.streakType) === 'text-red-400'
+                              ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                              : 'text-[#71767a]'
+                          }`}>
+                            {team.streakType || '-'}
+                          </span>
                         </td>
-                      </tr>
+                      </motion.tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </div>
+            </motion.div>
           </div>
         )}
 
         {/* Western Conference */}
         {westConference && (
           <div>
-            <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-t-lg p-4 text-white">
+            <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-t-xl p-4 text-white">
               <h2 className="text-2xl font-bold">{westConference.name}</h2>
             </div>
-            <div className="bg-white border border-gray-200 rounded-b-lg overflow-hidden">
+            <motion.div 
+              className="bg-[#16181c] border border-[#2f3336] rounded-b-xl overflow-hidden"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+            >
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 border-b border-gray-200">
-                    <tr>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">排名</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700 text-sm">球队</th>
-                      <th className="text-center py-3 px-4 font-semibold text-gray-700 text-sm">胜</th>
-                      <th className="text-center py-3 px-4 font-semibold text-gray-700 text-sm">负</th>
-                      <th className="text-center py-3 px-4 font-semibold text-gray-700 text-sm">胜率</th>
-                      <th className="text-center py-3 px-4 font-semibold text-gray-700 text-sm">胜差</th>
-                      <th className="text-center py-3 px-4 font-semibold text-gray-700 text-sm">连胜</th>
+                  <thead>
+                    <tr className="border-b border-[#2f3336]/30">
+                      <th className="text-left py-3 px-4 font-medium text-white text-sm">排名</th>
+                      <th className="text-left py-3 px-4 font-medium text-white text-sm sticky left-0 z-10 bg-[#181818]">球队</th>
+                      <th className="text-center py-3 px-4 font-medium text-white text-sm">胜</th>
+                      <th className="text-center py-3 px-4 font-medium text-white text-sm">负</th>
+                      <th className="text-center py-3 px-4 font-medium text-white text-sm">胜率</th>
+                      <th className="text-center py-3 px-4 font-medium text-white text-sm">胜差</th>
+                      <th className="text-center py-3 px-4 font-medium text-white text-sm">连胜</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody>
                     {westConference.teams.map((team, index) => (
-                      <tr
+                      <motion.tr
                         key={team.id}
-                        className="hover:bg-gray-50 transition-colors"
+                        className={`border-b border-[#2f3336]/20 transition-all duration-200 hover:bg-[#181818]/50 ${
+                          index % 2 === 0 ? 'bg-[#16181c]/30' : 'bg-[#16181c]/10'
+                        }`}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.2, delay: 0.25 + index * 0.03 }}
                       >
                         <td className="py-3 px-4">
                           <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                             team.playoffSeed <= 8
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-gray-100 text-gray-600'
+                              ? 'bg-red-900/30 text-red-400 border border-red-800/50'
+                              : 'bg-[#181818] text-[#71767a] border border-[#2f3336]/30'
                           }`}>
                             {team.playoffSeed || index + 1}
                           </div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-4 sticky left-0 z-10 bg-inherit">
                           <Link
                             to={`/teams/${team.abbreviation?.toLowerCase() || team.id}`}
-                            className="flex items-center space-x-3 hover:text-red-600 transition-colors"
+                            className="flex items-center space-x-3 hover:text-[#1d9bf0] transition-colors"
                           >
                             {team.logo && (
                               <img
@@ -225,32 +255,40 @@ function TeamsList() {
                               />
                             )}
                             <div>
-                              <div className="font-semibold text-gray-900">{team.name}</div>
-                              <div className="text-xs text-gray-500">{team.abbreviation}</div>
+                              <div className="font-semibold text-white">{team.name}</div>
+                              <div className="text-xs text-[#71767a]">{team.abbreviation}</div>
                             </div>
                           </Link>
                         </td>
-                        <td className="py-3 px-4 text-center text-gray-900 font-semibold">
+                        <td className="py-3 px-4 text-center text-white/90 font-semibold">
                           {team.wins ?? '-'}
                         </td>
-                        <td className="py-3 px-4 text-center text-gray-700">
+                        <td className="py-3 px-4 text-center text-white/90">
                           {team.losses ?? '-'}
                         </td>
-                        <td className="py-3 px-4 text-center text-gray-700">
+                        <td className="py-3 px-4 text-center text-white/90">
                           {formatWinPercent(team.winPercent)}%
                         </td>
-                        <td className="py-3 px-4 text-center text-gray-600 text-sm">
+                        <td className="py-3 px-4 text-center text-[#71767a] text-sm">
                           {formatGamesBehind(team.gamesBehind)}
                         </td>
-                        <td className={`py-3 px-4 text-center text-sm font-semibold ${getStreakColor(team.streakType)}`}>
-                          {team.streakType || '-'}
+                        <td className="py-3 px-4 text-center">
+                          <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                            getStreakColor(team.streakType) === 'text-green-400' 
+                              ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                              : getStreakColor(team.streakType) === 'text-red-400'
+                              ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                              : 'text-[#71767a]'
+                          }`}>
+                            {team.streakType || '-'}
+                          </span>
                         </td>
-                      </tr>
+                      </motion.tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </div>
+            </motion.div>
           </div>
         )}
       </div>
@@ -258,7 +296,7 @@ function TeamsList() {
       <div className="mt-6 flex justify-end">
         <button
           onClick={fetchStandings}
-          className="px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors text-sm font-medium"
+          className="px-4 py-2 bg-[#1d9bf0] text-white rounded-full hover:bg-[#1a8cd8] transition-colors text-sm font-medium"
         >
           刷新
         </button>

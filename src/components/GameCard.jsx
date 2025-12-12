@@ -1,16 +1,34 @@
 import { Link } from 'react-router-dom';
+// eslint-disable-next-line no-unused-vars
+import { motion } from 'framer-motion';
 
 function GameCard({ game }) {
+  // Team color mapping for left border
+  const getTeamColor = (teamAbbreviation) => {
+    const colors = {
+      'ATL': '#E03A3E', 'BOS': '#007A33', 'BKN': '#000000', 'CHA': '#1D1160',
+      'CHI': '#CE1141', 'CLE': '#860038', 'DAL': '#00538C', 'DEN': '#0E2240',
+      'DET': '#C8102E', 'GSW': '#1D428A', 'HOU': '#CE1141', 'IND': '#002D62',
+      'LAC': '#C8102E', 'LAL': '#552583', 'MEM': '#5D76A9', 'MIA': '#98002E',
+      'MIL': '#00471B', 'MIN': '#0C2340', 'NO': '#0C2340', 'NOP': '#0C2340',
+      'NY': '#006BB6', 'NYK': '#006BB6', 'OKC': '#007AC1', 'ORL': '#0077C0',
+      'PHI': '#006BB6', 'PHX': '#1D1160', 'POR': '#E03A3E', 'SAC': '#5A2D81',
+      'SA': '#C4CED4', 'SAS': '#C4CED4', 'TOR': '#CE1141', 'UTA': '#002B5C',
+      'WAS': '#002B5C', 'WIZ': '#002B5C'
+    };
+    return colors[teamAbbreviation?.toUpperCase()] || '#1d9bf0';
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 1:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gradient-to-r from-[#16181c] to-[#181818] text-[#71767a] border border-[#2f3336]';
       case 2:
-        return 'bg-red-100 text-red-700 animate-pulse';
+        return 'bg-gradient-to-r from-red-900/40 to-red-800/30 text-red-400 border border-red-500/50 animate-pulse shadow-lg shadow-red-900/20';
       case 3:
-        return 'bg-green-100 text-green-700';
+        return 'bg-gradient-to-r from-green-900/40 to-green-800/30 text-green-400 border border-green-500/50';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-gradient-to-r from-[#16181c] to-[#181818] text-[#71767a] border border-[#2f3336]';
     }
   };
 
@@ -20,96 +38,174 @@ function GameCard({ game }) {
     3: '已结束'
   };
 
+  // Get primary team color for border (use away team or home team)
+  const primaryColor = getTeamColor(game.awayTeam.abbreviation || game.homeTeam.abbreviation);
+
   return (
-    <Link
-      to={`/games/${game.gameId}`}
-      className="block bg-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200"
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
     >
-      <div className="p-6">
-        {/* Status Badge */}
-        <div className="flex justify-end mb-4">
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(
-              game.gameStatus
-            )}`}
-          >
-            {statusInfo[game.gameStatus] || game.gameStatusText}
-            {game.gameStatus === 2 && game.gameStatusText && ` - ${game.gameStatusText}`}
-          </span>
-        </div>
+      <Link
+        to={`/games/${game.gameId}`}
+        className="block group relative"
+      >
+        {/* Glassmorphism Card */}
+        <div 
+          className="relative bg-[#16181c]/80 backdrop-blur-xl rounded-2xl border border-[#2f3336]/50 overflow-hidden transition-all duration-300 hover:bg-[#16181c]/90 hover:border-[#2f3336] hover:shadow-2xl hover:shadow-black/50 hover:-translate-y-1"
+          style={{
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+          }}
+        >
+          {/* Colored Left Border */}
+          <div 
+            className="absolute left-0 top-0 bottom-0 w-1 transition-all duration-300 group-hover:w-1.5"
+            style={{ backgroundColor: primaryColor }}
+          />
 
-        {/* Teams and Scores */}
-        <div className="space-y-4">
-          {/* Away Team */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3 flex-1">
-              <img
-                src={game.awayTeam.logo}
-                alt={game.awayTeam.teamName}
-                className="w-12 h-12 object-contain"
-                onError={(e) => {
-                  e.target.style.display = 'none';
+          <div className="p-6 pl-7">
+            {/* Premium Status Badge */}
+            <div className="flex justify-end mb-5">
+              <motion.span
+                whileHover={{ scale: 1.05 }}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold border backdrop-blur-sm ${getStatusColor(
+                  game.gameStatus
+                )}`}
+                style={{
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
                 }}
-              />
-              <div>
-                <div className="font-semibold text-gray-900">
-                  {game.awayTeam.teamCity} {game.awayTeam.teamName}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {game.awayTeam.wins}-{game.awayTeam.losses}
-                </div>
-              </div>
+              >
+                {statusInfo[game.gameStatus] || game.gameStatusText}
+                {game.gameStatus === 2 && game.gameStatusText && ` - ${game.gameStatusText}`}
+              </motion.span>
             </div>
-            {game.awayTeam.score !== null && (
-              <div className="text-2xl font-bold text-gray-900">
-                {game.awayTeam.score}
+
+            {/* Teams and Scores */}
+            <div className="space-y-5">
+              {/* Away Team */}
+              <motion.div 
+                className="flex items-center justify-between"
+                whileHover={{ x: 4 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center space-x-4 flex-1 min-w-0">
+                  {/* Larger Centered Logo */}
+                  <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center bg-[#181818]/50 rounded-xl p-2 border border-[#2f3336]/50 backdrop-blur-sm">
+                    <img
+                      src={game.awayTeam.logo}
+                      alt={game.awayTeam.teamName}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-white text-lg truncate">
+                      {game.awayTeam.teamCity} {game.awayTeam.teamName}
+                    </div>
+                    <div className="text-sm text-[#71767a] mt-0.5">
+                      {game.awayTeam.wins}-{game.awayTeam.losses}
+                    </div>
+                  </div>
+                </div>
+                {game.awayTeam.score !== null && (
+                  <motion.div 
+                    className="text-3xl font-bold text-white ml-4 flex-shrink-0"
+                    initial={{ scale: 0.9 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    {game.awayTeam.score}
+                  </motion.div>
+                )}
+              </motion.div>
+
+              {/* Divider */}
+              <div className="flex items-center justify-center py-1">
+                <div className="h-px w-full bg-gradient-to-r from-transparent via-[#2f3336] to-transparent" />
+                <span className="px-3 text-[#71767a] text-xs">VS</span>
+                <div className="h-px w-full bg-gradient-to-r from-transparent via-[#2f3336] to-transparent" />
               </div>
+
+              {/* Home Team */}
+              <motion.div 
+                className="flex items-center justify-between"
+                whileHover={{ x: 4 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="flex items-center space-x-4 flex-1 min-w-0">
+                  {/* Larger Centered Logo */}
+                  <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center bg-[#181818]/50 rounded-xl p-2 border border-[#2f3336]/50 backdrop-blur-sm">
+                    <img
+                      src={game.homeTeam.logo}
+                      alt={game.homeTeam.teamName}
+                      className="w-full h-full object-contain"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-bold text-white text-lg truncate">
+                      {game.homeTeam.teamCity} {game.homeTeam.teamName}
+                    </div>
+                    <div className="text-sm text-[#71767a] mt-0.5">
+                      {game.homeTeam.wins}-{game.homeTeam.losses}
+                    </div>
+                  </div>
+                </div>
+                {game.homeTeam.score !== null && (
+                  <motion.div 
+                    className="text-3xl font-bold text-white ml-4 flex-shrink-0"
+                    initial={{ scale: 0.9 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.15 }}
+                  >
+                    {game.homeTeam.score}
+                  </motion.div>
+                )}
+              </motion.div>
+            </div>
+
+            {/* Game Time */}
+            {game.gameStatus === 1 && game.gameEt && (
+              <motion.div 
+                className="mt-5 pt-5 border-t border-[#2f3336]/50 text-sm text-[#71767a] text-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <div className="flex items-center justify-center space-x-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>
+                    {new Date(game.gameEt).toLocaleString('zh-CN', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      timeZone: 'Asia/Shanghai',
+                      hour12: false
+                    })}
+                  </span>
+                </div>
+              </motion.div>
             )}
           </div>
 
-          {/* Home Team */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3 flex-1">
-              <img
-                src={game.homeTeam.logo}
-                alt={game.homeTeam.teamName}
-                className="w-12 h-12 object-contain"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-              <div>
-                <div className="font-semibold text-gray-900">
-                  {game.homeTeam.teamCity} {game.homeTeam.teamName}
-                </div>
-                <div className="text-sm text-gray-500">
-                  {game.homeTeam.wins}-{game.homeTeam.losses}
-                </div>
-              </div>
-            </div>
-            {game.homeTeam.score !== null && (
-              <div className="text-2xl font-bold text-gray-900">
-                {game.homeTeam.score}
-              </div>
-            )}
-          </div>
+          {/* Subtle glow effect on hover */}
+          <div 
+            className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+            style={{
+              background: `linear-gradient(135deg, ${primaryColor}15 0%, transparent 50%)`,
+            }}
+          />
         </div>
-
-        {/* Game Time */}
-        {game.gameStatus === 1 && game.gameEt && (
-          <div className="mt-4 pt-4 border-t border-gray-100 text-sm text-gray-500 text-center">
-            {new Date(game.gameEt).toLocaleString('zh-CN', {
-              hour: '2-digit',
-              minute: '2-digit',
-              timeZone: 'Asia/Shanghai',
-              hour12: false
-            })}
-          </div>
-        )}
-      </div>
-    </Link>
+      </Link>
+    </motion.div>
   );
 }
 
 export default GameCard;
-

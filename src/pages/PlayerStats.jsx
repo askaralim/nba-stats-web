@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
 
 function PlayerStats() {
@@ -174,7 +175,7 @@ function PlayerStats() {
           </div>
         </div>
         
-        <div className="bg-white border border-gray-200 rounded-b-lg overflow-hidden">
+        <div className="bg-[#16181c] border border-[#2f3336] rounded-b-lg overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
             {topPlayers.map((player, index) => {
               const statValue = getStatValue(player, section.statName);
@@ -183,7 +184,7 @@ function PlayerStats() {
               return (
                 <div
                   key={`${player.id}-${section.statName}`}
-                  className="bg-gradient-to-br from-gray-50 to-white rounded-lg border border-gray-200 hover:border-gray-300 hover:shadow-md transition-all duration-200 p-4"
+                  className="bg-[#16181c] rounded-xl border border-[#2f3336] hover:bg-[#181818] hover:border-[#2f3336] transition-all duration-200 p-4"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center space-x-3 flex-1">
@@ -192,22 +193,31 @@ function PlayerStats() {
                           <img
                             src={player.headshot}
                             alt={player.name}
-                            className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                            className="w-12 h-12 rounded-full object-cover border-2 border-[#2f3336]"
                             onError={(e) => {
                               e.target.src = 'https://via.placeholder.com/48';
                             }}
                           />
                         ) : (
-                          <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-400 font-semibold">
+                          <div className="w-12 h-12 rounded-full bg-[#181818] flex items-center justify-center text-[#71767a] font-semibold">
                             {player.name?.charAt(0) || '?'}
                           </div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-bold text-gray-900 truncate">
-                          {player.name}
-                        </div>
-                        <div className="flex items-center space-x-2 text-sm text-gray-600">
+                        {player.id ? (
+                          <Link
+                            to={`/players/${player.id}`}
+                            className="font-bold text-[#1d9bf0] hover:text-[#1a8cd8] hover:underline truncate block transition-colors"
+                          >
+                            {player.name}
+                          </Link>
+                        ) : (
+                          <div className="font-bold text-white truncate">
+                            {player.name}
+                          </div>
+                        )}
+                        <div className="flex items-center space-x-2 text-sm text-[#71767a]">
                           {player.teamLogo && (
                             <img
                               src={player.teamLogo}
@@ -219,7 +229,7 @@ function PlayerStats() {
                             />
                           )}
                           <span className="truncate">{player.team || '-'}</span>
-                          <span className="text-gray-400">•</span>
+                          <span className="text-[#71767a]">•</span>
                           <span>{player.position || '-'}</span>
                         </div>
                       </div>
@@ -229,23 +239,23 @@ function PlayerStats() {
                         rank === 1 
                           ? 'bg-yellow-400 text-yellow-900' 
                           : rank === 2 
-                          ? 'bg-gray-300 text-gray-700'
+                          ? 'bg-[#2f3336] text-white'
                           : rank === 3
                           ? 'bg-orange-300 text-orange-900'
-                          : 'bg-gray-100 text-gray-600'
+                          : 'bg-[#181818] text-[#71767a]'
                       }`}>
                         {rank}
                       </div>
                     </div>
                   </div>
                   
-                  <div className="flex items-baseline justify-between pt-3 border-t border-gray-100">
-                    <div className="text-xs text-gray-500">
+                  <div className="flex items-baseline justify-between pt-3 border-t border-[#2f3336]">
+                    <div className="text-xs text-[#71767a]">
                       场次: {getStatValue(player, 'gamesPlayed')}
                     </div>
                     <div className="text-right">
                       <div className={`text-2xl font-bold ${
-                        rank === 1 ? 'text-yellow-600' : 'text-gray-900'
+                        rank === 1 ? 'text-yellow-600' : 'text-white'
                       }`}>
                         {formatValue(statValue)}
                       </div>
@@ -269,8 +279,8 @@ function PlayerStats() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"></div>
-          <p className="text-gray-600">加载球员数据中...</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#1d9bf0] mb-4"></div>
+          <p className="text-[#71767a]">加载球员数据中...</p>
         </div>
       </div>
     );
@@ -278,12 +288,12 @@ function PlayerStats() {
 
   if (error && players.length === 0) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-        <p className="text-red-800 font-semibold mb-2">加载球员数据失败</p>
-        <p className="text-red-600 text-sm mb-4">{error}</p>
+      <div className="bg-[#16181c] border border-[#2f3336] rounded-xl p-6 text-center">
+        <p className="text-white font-semibold mb-2">加载球员数据失败</p>
+        <p className="text-[#71767a] text-sm mb-4">{error}</p>
         <button
           onClick={fetchPlayerStats}
-          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+          className="px-4 py-2 bg-[#1d9bf0] text-white rounded-full hover:bg-[#1a8cd8] transition-colors font-medium"
         >
           重试
         </button>
@@ -294,18 +304,18 @@ function PlayerStats() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">球员数据统计</h1>
+        <h1 className="text-3xl font-bold text-white mb-4">球员数据统计</h1>
         
         {/* Filters */}
         <div className="flex gap-4 mb-6">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-white mb-2">
               赛季
             </label>
             <select
               value={filters.season}
               onChange={(e) => handleFilterChange('season', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+              className="w-full px-4 py-2 bg-[#16181c] border border-[#2f3336] text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1d9bf0] focus:border-transparent"
             >
               <option value="2026|2">2025-26 常规赛</option>
               <option value="2025|3">2024-25 季后赛</option>
@@ -316,13 +326,13 @@ function PlayerStats() {
           </div>
 
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-white mb-2">
               位置
             </label>
             <select
               value={filters.position}
               onChange={(e) => handleFilterChange('position', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+              className="w-full px-4 py-2 bg-[#16181c] border border-[#2f3336] text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1d9bf0] focus:border-transparent"
             >
               <option value="all-positions">全部位置</option>
               <option value="guard">后卫</option>
@@ -333,15 +343,15 @@ function PlayerStats() {
         </div>
 
         {metadata && (
-          <div className="mb-4 text-sm text-gray-600">
+          <div className="mb-4 text-sm text-[#71767a]">
             <p>赛季: {metadata.season || 'N/A'} • {metadata.seasonType || 'N/A'} • 共 {metadata.totalCount || 0} 名球员</p>
           </div>
         )}
       </div>
 
       {players.length === 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <p className="text-gray-600 text-lg">未找到球员数据</p>
+        <div className="bg-[#16181c] rounded-xl border border-[#2f3336] p-12 text-center">
+          <p className="text-[#71767a] text-lg">未找到球员数据</p>
         </div>
       ) : (
         <div>
@@ -361,7 +371,7 @@ function PlayerStats() {
       <div className="mt-6 flex justify-end">
         <button
           onClick={fetchPlayerStats}
-          className="px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors text-sm font-medium"
+          className="px-4 py-2 bg-[#1d9bf0] text-white rounded-full hover:bg-[#1a8cd8] transition-colors text-sm font-medium"
         >
           刷新
         </button>

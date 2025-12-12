@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
+// eslint-disable-next-line no-unused-vars
+import { motion } from 'framer-motion';
 import { API_BASE_URL } from '../config';
 
 function GameDetails() {
@@ -42,8 +44,8 @@ function GameDetails() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"></div>
-          <p className="text-gray-600">加载比赛详情...</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#1d9bf0] mb-4"></div>
+          <p className="text-[#71767a]">加载比赛详情...</p>
         </div>
       </div>
     );
@@ -51,19 +53,19 @@ function GameDetails() {
 
   if (error || !game) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-        <p className="text-red-800 font-semibold mb-2">加载比赛失败</p>
-        <p className="text-red-600 text-sm mb-4">{error || '未找到比赛'}</p>
+      <div className="bg-[#16181c] border border-[#2f3336] rounded-xl p-6 text-center">
+        <p className="text-white font-semibold mb-2">加载比赛失败</p>
+        <p className="text-[#71767a] text-sm mb-4">{error || '未找到比赛'}</p>
         <div className="space-x-4">
           <button
             onClick={fetchGameDetails}
-            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+            className="px-4 py-2 bg-[#1d9bf0] text-white rounded-full hover:bg-[#1a8cd8] transition-colors font-medium"
           >
             重试
           </button>
           <Link
             to="/games"
-            className="inline-block px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+            className="inline-block px-4 py-2 bg-[#16181c] border border-[#2f3336] text-white rounded-full hover:bg-[#181818] transition-colors font-medium"
           >
             返回比赛列表
           </Link>
@@ -75,13 +77,13 @@ function GameDetails() {
   const getStatusColor = (status) => {
     switch (status) {
       case 1:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-[#16181c] text-[#71767a] border border-[#2f3336]';
       case 2:
-        return 'bg-red-100 text-red-700 animate-pulse';
+        return 'bg-red-900/30 text-red-400 border border-red-800/50 animate-pulse';
       case 3:
-        return 'bg-green-100 text-green-700';
+        return 'bg-green-900/30 text-green-400 border border-green-800/50';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-[#16181c] text-[#71767a] border border-[#2f3336]';
     }
   };
 
@@ -95,7 +97,7 @@ function GameDetails() {
     <div>
       <Link
         to="/games"
-        className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6"
+        className="inline-flex items-center text-[#71767a] hover:text-white mb-6 transition-colors"
       >
         <svg
           className="w-5 h-5 mr-2"
@@ -114,11 +116,11 @@ function GameDetails() {
       </Link>
 
       {/* Game Header */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+      <div className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6 mb-6">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">比赛详情</h1>
+          <h1 className="text-2xl font-bold text-white">比赛详情</h1>
           <span
-            className={`px-4 py-2 rounded-full text-sm font-semibold ${getStatusColor(
+            className={`px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(
               game.gameStatus
             )}`}
           >
@@ -146,17 +148,17 @@ function GameDetails() {
             </Link>
             <Link
               to={`/teams/${game.awayTeam.teamTricode?.toLowerCase() || game.awayTeam.teamId}`}
-              className="block hover:text-blue-600 transition-colors"
+              className="block hover:text-[#1d9bf0] transition-colors"
             >
-              <h2 className="text-xl font-bold text-gray-900 mb-1">
+              <h2 className="text-xl font-bold text-white mb-1">
                 {game.awayTeam.teamCity} {game.awayTeam.teamName}
               </h2>
             </Link>
-            <p className="text-gray-600 mb-2">
+            <p className="text-[#71767a] mb-2">
               {game.awayTeam.wins}-{game.awayTeam.losses}
             </p>
             {game.awayTeam.score !== null && (
-              <p className="text-4xl font-bold text-gray-900">{game.awayTeam.score}</p>
+              <p className="text-4xl font-bold text-white">{game.awayTeam.score}</p>
             )}
           </div>
 
@@ -177,24 +179,24 @@ function GameDetails() {
             </Link>
             <Link
               to={`/teams/${game.homeTeam.teamTricode?.toLowerCase() || game.homeTeam.teamId}`}
-              className="block hover:text-blue-600 transition-colors"
+              className="block hover:text-[#1d9bf0] transition-colors"
             >
-              <h2 className="text-xl font-bold text-gray-900 mb-1">
+              <h2 className="text-xl font-bold text-white mb-1">
                 {game.homeTeam.teamCity} {game.homeTeam.teamName}
               </h2>
             </Link>
-            <p className="text-gray-600 mb-2">
+            <p className="text-[#71767a] mb-2">
               {game.homeTeam.wins}-{game.homeTeam.losses}
             </p>
             {game.homeTeam.score !== null && (
-              <p className="text-4xl font-bold text-gray-900">{game.homeTeam.score}</p>
+              <p className="text-4xl font-bold text-white">{game.homeTeam.score}</p>
             )}
           </div>
         </div>
 
         {/* Game Time */}
         {game.gameStatus === 1 && game.gameEt && (
-          <div className="text-center text-gray-600">
+          <div className="text-center text-[#71767a]">
             {new Date(game.gameEt).toLocaleString('zh-CN', {
               hour: '2-digit',
               minute: '2-digit',
@@ -207,58 +209,58 @@ function GameDetails() {
 
       {/* Score by Period Table */}
       {game.awayTeam.periods && game.awayTeam.periods.length > 0 && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">各节比分</h2>
+        <div className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6 mb-6">
+          <h2 className="text-xl font-bold text-white mb-4">各节比分</h2>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">球队</th>
+                <tr className="border-b border-[#2f3336]">
+                  <th className="text-left py-3 px-4 font-semibold text-white">球队</th>
                   {game.awayTeam.periods.map((period, idx) => (
                     <th
                       key={idx}
-                      className="text-center py-3 px-4 font-semibold text-gray-700"
+                      className="text-center py-3 px-4 font-semibold text-white"
                     >
                       {period.periodType === 'REGULAR' ? `Q${period.period}` : `OT${period.period - 4}`}
                     </th>
                   ))}
-                  <th className="text-center py-3 px-4 font-semibold text-gray-700">总分</th>
+                  <th className="text-center py-3 px-4 font-semibold text-white">总分</th>
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-gray-100">
-                  <td className="py-3 px-4 font-medium text-gray-900">
+                <tr className="border-b border-[#2f3336]">
+                  <td className="py-3 px-4 font-medium text-white">
                     <Link
                       to={`/teams/${game.awayTeam.teamTricode?.toLowerCase() || game.awayTeam.teamId}`}
-                      className="hover:text-blue-600 transition-colors"
+                      className="hover:text-[#1d9bf0] transition-colors"
                     >
                       {game.awayTeam.teamCity} {game.awayTeam.teamName}
                     </Link>
                   </td>
                   {game.awayTeam.periods.map((period, idx) => (
-                    <td key={idx} className="text-center py-3 px-4 text-gray-700">
+                    <td key={idx} className="text-center py-3 px-4 text-white">
                       {period.score}
                     </td>
                   ))}
-                  <td className="text-center py-3 px-4 font-bold text-gray-900">
+                  <td className="text-center py-3 px-4 font-bold text-white">
                     {game.awayTeam.score}
                   </td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 font-medium text-gray-900">
+                  <td className="py-3 px-4 font-medium text-white">
                     <Link
                       to={`/teams/${game.homeTeam.teamTricode?.toLowerCase() || game.homeTeam.teamId}`}
-                      className="hover:text-blue-600 transition-colors"
+                      className="hover:text-[#1d9bf0] transition-colors"
                     >
                       {game.homeTeam.teamCity} {game.homeTeam.teamName}
                     </Link>
                   </td>
                   {game.homeTeam.periods.map((period, idx) => (
-                    <td key={idx} className="text-center py-3 px-4 text-gray-700">
+                    <td key={idx} className="text-center py-3 px-4 text-white">
                       {period.score}
                     </td>
                   ))}
-                  <td className="text-center py-3 px-4 font-bold text-gray-900">
+                  <td className="text-center py-3 px-4 font-bold text-white">
                     {game.homeTeam.score}
                   </td>
                 </tr>
@@ -270,8 +272,8 @@ function GameDetails() {
 
       {/* Boxscore */}
       {game.boxscore && game.boxscore.teams && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">球员数据</h2>
+        <div className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6">
+          <h2 className="text-xl font-bold text-white mb-4">球员数据</h2>
           {game.boxscore.teams.map((team, teamIndex) => (
             <div key={team.teamId} className={teamIndex > 0 ? 'mt-8' : ''}>
               {/* Team Header */}
@@ -288,7 +290,7 @@ function GameDetails() {
                       e.target.style.display = 'none';
                     }}
                   />
-                  <h3 className="text-lg font-bold text-gray-900 hover:text-blue-600 transition-colors cursor-pointer">
+                  <h3 className="text-lg font-bold text-white hover:text-[#1d9bf0] transition-colors cursor-pointer">
                     {team.teamName}
                   </h3>
                 </Link>
@@ -296,142 +298,197 @@ function GameDetails() {
 
               {/* Starters */}
               {team.starters && team.starters.length > 0 && (
-                <div className="mb-6">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">首发</h4>
+                <motion.div 
+                  className="mb-6"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.1 }}
+                >
+                  <h4 className="text-sm font-semibold text-white mb-3">首发</h4>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b border-gray-200">
-                          <th className="text-left py-2 px-2 font-semibold text-gray-700">球员</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">MIN</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">PTS</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">FG</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">3PT</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">FT</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">REB</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">AST</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">TO</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">STL</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">BLK</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">OREB</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">DREB</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">PF</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">+/-</th>
+                        <tr className="border-b border-[#2f3336]/30">
+                          <th className="text-left py-3 px-3 font-medium text-white sticky left-0 z-10 bg-[#16181c]">球员</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">MIN</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">PTS</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">FG</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">3PT</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">FT</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">REB</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">AST</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">TO</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">STL</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">BLK</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">OREB</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">DREB</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">PF</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">+/-</th>
                         </tr>
                       </thead>
                       <tbody>
                         {team.starters.map((player, idx) => (
-                          <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
-                            <td className="py-2 px-2">
+                          <motion.tr 
+                            key={idx} 
+                            className={`border-b border-[#2f3336]/20 transition-all duration-200 hover:bg-[#181818]/50 ${
+                              idx % 2 === 0 ? 'bg-[#16181c]/30' : 'bg-[#16181c]/10'
+                            }`}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.2, delay: 0.15 + idx * 0.03 }}
+                          >
+                            <td className="py-3 px-3 sticky left-0 z-10 bg-inherit">
                               <div className="flex items-center">
                                 {player.headshot && (
                                   <img
                                     src={player.headshot}
                                     alt={player.name}
-                                    className="w-6 h-6 rounded-full mr-2 object-cover"
+                                    className="w-7 h-7 rounded-full mr-2.5 object-cover border border-[#2f3336]/30"
                                     onError={(e) => {
                                       e.target.style.display = 'none';
                                     }}
                                   />
                                 )}
                                 <div>
-                                  <div className="font-medium text-gray-900">{player.name}</div>
-                                  <div className="text-xs text-gray-500">{player.position} #{player.jersey}</div>
+                                  {player.athleteId ? (
+                                    <Link
+                                      to={`/players/${player.athleteId}`}
+                                      className="font-medium text-[#1d9bf0] hover:text-[#1a8cd8] hover:underline text-[15px] transition-colors"
+                                    >
+                                      {player.name}
+                                    </Link>
+                                  ) : (
+                                    <div className="font-medium text-white text-[15px]">{player.name}</div>
+                                  )}
+                                  <div className="text-xs text-[#71767a] mt-0.5">{player.position} #{player.jersey}</div>
                                 </div>
                               </div>
                             </td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.minutes}</td>
-                            <td className="text-center py-2 px-2 font-semibold text-gray-900">{player.stats.points}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.fieldGoals}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.threePointers}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.freeThrows}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.rebounds}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.assists}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.turnovers}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.steals}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.blocks}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.offensiveRebounds}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.defensiveRebounds}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.fouls}</td>
-                            <td className={`text-center py-2 px-2 ${player.stats.plusMinus >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {player.stats.plusMinus >= 0 ? '+' : ''}{player.stats.plusMinus}
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.minutes}</td>
+                            <td className="text-center py-3 px-3 font-semibold text-white">{player.stats.points}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.fieldGoals}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.threePointers}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.freeThrows}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.rebounds}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.assists}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.turnovers}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.steals}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.blocks}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.offensiveRebounds}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.defensiveRebounds}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.fouls}</td>
+                            <td className="text-center py-3 px-3">
+                              <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                player.stats.plusMinus >= 0 
+                                  ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                                  : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                              }`}>
+                                {player.stats.plusMinus >= 0 ? '+' : ''}{player.stats.plusMinus}
+                              </span>
                             </td>
-                          </tr>
+                          </motion.tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                </div>
+                </motion.div>
               )}
 
               {/* Bench */}
               {team.bench && team.bench.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">替补</h4>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.2 }}
+                >
+                  <h4 className="text-sm font-semibold text-white mb-3">替补</h4>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b border-gray-200">
-                          <th className="text-left py-2 px-2 font-semibold text-gray-700">球员</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">MIN</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">PTS</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">FG</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">3PT</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">FT</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">REB</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">AST</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">TO</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">STL</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">BLK</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">OREB</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">DREB</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">PF</th>
-                          <th className="text-center py-2 px-2 font-semibold text-gray-700">+/-</th>
+                        <tr className="border-b border-[#2f3336]/30">
+                          <th className="text-left py-3 px-3 font-medium text-white sticky left-0 z-10 bg-[#16181c]">球员</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">MIN</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">PTS</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">FG</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">3PT</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">FT</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">REB</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">AST</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">TO</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">STL</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">BLK</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">OREB</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">DREB</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">PF</th>
+                          <th className="text-center py-3 px-3 font-medium text-white">+/-</th>
                         </tr>
                       </thead>
                       <tbody>
                         {team.bench.map((player, idx) => (
-                          <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
-                            <td className="py-2 px-2">
+                          <motion.tr 
+                            key={idx} 
+                            className={`border-b border-[#2f3336]/20 transition-all duration-200 hover:bg-[#181818]/50 ${
+                              idx % 2 === 0 ? 'bg-[#16181c]/30' : 'bg-[#16181c]/10'
+                            }`}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.2, delay: 0.25 + idx * 0.03 }}
+                          >
+                            <td className="py-3 px-3 sticky left-0 z-10 bg-inherit">
                               <div className="flex items-center">
                                 {player.headshot && (
                                   <img
                                     src={player.headshot}
                                     alt={player.name}
-                                    className="w-6 h-6 rounded-full mr-2 object-cover"
+                                    className="w-7 h-7 rounded-full mr-2.5 object-cover border border-[#2f3336]/30"
                                     onError={(e) => {
                                       e.target.style.display = 'none';
                                     }}
                                   />
                                 )}
                                 <div>
-                                  <div className="font-medium text-gray-900">{player.name}</div>
-                                  <div className="text-xs text-gray-500">{player.position} #{player.jersey}</div>
+                                  {player.athleteId ? (
+                                    <Link
+                                      to={`/players/${player.athleteId}`}
+                                      className="font-medium text-[#1d9bf0] hover:text-[#1a8cd8] hover:underline text-[15px] transition-colors"
+                                    >
+                                      {player.name}
+                                    </Link>
+                                  ) : (
+                                    <div className="font-medium text-white text-[15px]">{player.name}</div>
+                                  )}
+                                  <div className="text-xs text-[#71767a] mt-0.5">{player.position} #{player.jersey}</div>
                                 </div>
                               </div>
                             </td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.minutes}</td>
-                            <td className="text-center py-2 px-2 font-semibold text-gray-900">{player.stats.points}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.fieldGoals}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.threePointers}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.freeThrows}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.rebounds}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.assists}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.turnovers}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.steals}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.blocks}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.offensiveRebounds}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.defensiveRebounds}</td>
-                            <td className="text-center py-2 px-2 text-gray-700">{player.stats.fouls}</td>
-                            <td className={`text-center py-2 px-2 ${player.stats.plusMinus >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {player.stats.plusMinus >= 0 ? '+' : ''}{player.stats.plusMinus}
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.minutes}</td>
+                            <td className="text-center py-3 px-3 font-semibold text-white">{player.stats.points}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.fieldGoals}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.threePointers}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.freeThrows}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.rebounds}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.assists}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.turnovers}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.steals}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.blocks}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.offensiveRebounds}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.defensiveRebounds}</td>
+                            <td className="text-center py-3 px-3 text-white/90">{player.stats.fouls}</td>
+                            <td className="text-center py-3 px-3">
+                              <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                player.stats.plusMinus >= 0 
+                                  ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                                  : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                              }`}>
+                                {player.stats.plusMinus >= 0 ? '+' : ''}{player.stats.plusMinus}
+                              </span>
                             </td>
-                          </tr>
+                          </motion.tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
-                </div>
+                </motion.div>
               )}
             </div>
           ))}
@@ -441,7 +498,7 @@ function GameDetails() {
       <div className="mt-6 flex justify-end">
         <button
           onClick={fetchGameDetails}
-          className="px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors text-sm font-medium"
+          className="px-4 py-2 bg-[#1d9bf0] text-white rounded-full hover:bg-[#1a8cd8] transition-colors text-sm font-medium"
         >
           刷新
         </button>

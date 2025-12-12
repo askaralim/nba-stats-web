@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+// eslint-disable-next-line no-unused-vars
+import { motion, AnimatePresence } from 'framer-motion';
 import GameCard from '../components/GameCard';
 import { API_BASE_URL } from '../config';
 
@@ -19,7 +21,6 @@ function GamesToday() {
   };
   
   const [selectedDate, setSelectedDate] = useState(() => getChineseDate());
-  const [date, setDate] = useState('');
 
   // Generate date range for navigation (7 days: 3 before, today, 3 after)
   const generateDateRange = (centerDate) => {
@@ -89,9 +90,8 @@ function GamesToday() {
       if (!response.ok) {
         throw new Error('加载比赛失败');
       }
-      const data = await response.json();
-      setGames(data.games || []);
-      setDate(data.date || dateParam);
+             const data = await response.json();
+             setGames(data.games || []);
     } catch (err) {
       setError(err.message);
       console.error('Error fetching games:', err);
@@ -102,7 +102,7 @@ function GamesToday() {
 
   useEffect(() => {
     fetchGames();
-  }, [selectedDate]);
+  }, [selectedDate, fetchGames]);
 
   useEffect(() => {
     // Auto-refresh every 2 seconds if there are live games
@@ -144,8 +144,8 @@ function GamesToday() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"></div>
-          <p className="text-gray-600">加载比赛中...</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#1d9bf0] mb-4"></div>
+          <p className="text-[#71767a]">加载比赛中...</p>
         </div>
       </div>
     );
@@ -153,12 +153,12 @@ function GamesToday() {
 
   if (error && games.length === 0) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-        <p className="text-red-800 font-semibold mb-2">加载比赛失败</p>
-        <p className="text-red-600 text-sm mb-4">{error}</p>
+      <div className="bg-[#16181c] border border-[#2f3336] rounded-xl p-6 text-center">
+        <p className="text-white font-semibold mb-2">加载比赛失败</p>
+        <p className="text-[#71767a] text-sm mb-4">{error}</p>
         <button
           onClick={() => fetchGames()}
-          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+          className="px-4 py-2 bg-[#1d9bf0] text-white rounded-full hover:bg-[#1a8cd8] transition-colors font-medium"
         >
           重试
         </button>
@@ -169,20 +169,32 @@ function GamesToday() {
   return (
     <div>
       {/* Date Navigator */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-        <div className="flex items-center justify-between">
+      <div className="bg-[#16181c]/80 backdrop-blur-xl rounded-2xl border border-[#2f3336]/50 p-4 mb-6 shadow-lg shadow-black/20">
+        <div className="flex items-center justify-between gap-3">
           <button
             onClick={handlePreviousDates}
             disabled={loading}
-            className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-wait"
+            className="flex-shrink-0 p-2.5 text-[#1d9bf0] hover:bg-[#181818]/50 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-wait hover:scale-105 active:scale-95"
             aria-label="Previous dates"
+            style={{
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+            }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
 
-          <div className="flex items-center space-x-2 overflow-x-auto flex-1 mx-4 scrollbar-hide">
+          {/* Scrollable Date Pills */}
+          <div 
+            className="flex items-center gap-2 overflow-x-auto flex-1 scrollbar-hide"
+            style={{
+              scrollBehavior: 'smooth',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none'
+            }}
+          >
             {dateRange.map((dateItem, index) => {
               const isSelected = isSameDay(dateItem, selectedDate);
               const isToday = isSameDay(dateItem, getChineseDate());
@@ -192,17 +204,38 @@ function GamesToday() {
                   key={index}
                   onClick={() => handleDateSelect(dateItem)}
                   disabled={loading}
-                  className={`px-4 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-all ${
+                  className={`group relative flex-shrink-0 px-5 py-2.5 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-300 ${
                     loading && isSelected
-                      ? 'bg-gray-700 text-white font-bold opacity-75 cursor-wait'
+                      ? 'bg-[#1d9bf0]/50 text-white font-bold opacity-75 cursor-wait'
                       : isSelected
-                      ? 'bg-gray-900 text-white font-bold'
+                      ? 'bg-[#1d9bf0] text-white font-bold shadow-lg shadow-[#1d9bf0]/30'
                       : isToday
-                      ? 'bg-gray-100 text-gray-900 font-semibold hover:bg-gray-200'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  } ${loading ? 'cursor-wait' : ''}`}
+                      ? 'bg-[#181818]/60 text-white font-semibold hover:bg-[#181818] hover:text-white hover:shadow-md'
+                      : 'bg-[#181818]/30 text-[#71767a] hover:bg-[#181818]/60 hover:text-white'
+                  } ${loading ? 'cursor-wait' : 'cursor-pointer'}`}
+                  style={{
+                    boxShadow: isSelected 
+                      ? '0 4px 12px rgba(29, 155, 240, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2)' 
+                      : '0 2px 6px rgba(0, 0, 0, 0.15)',
+                    transform: 'translateZ(0)' // Enable hardware acceleration
+                  }}
                 >
-                  <span className="flex items-center gap-2">
+                  {/* Bottom Indicator Bar for Selected Date */}
+                  {isSelected && (
+                    <motion.div
+                      className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-white rounded-full"
+                      initial={{ width: 0 }}
+                      animate={{ width: '2rem' }}
+                      transition={{ duration: 0.3 }}
+                      style={{
+                        boxShadow: '0 0 8px rgba(255, 255, 255, 0.5)'
+                      }}
+                    />
+                  )}
+                  
+                  <span className={`relative flex items-center gap-2 transition-all duration-200 ${
+                    isSelected ? '' : 'group-hover:brightness-110'
+                  }`}>
                     {formatDateForDisplay(dateItem)}
                     {loading && isSelected && (
                       <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -216,12 +249,15 @@ function GamesToday() {
             })}
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={handleNextDates}
               disabled={loading}
-              className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-wait"
+              className="p-2.5 text-[#1d9bf0] hover:bg-[#181818]/50 rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-wait hover:scale-105 active:scale-95"
               aria-label="Next dates"
+              style={{
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+              }}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -230,9 +266,12 @@ function GamesToday() {
             <button
               onClick={handleTodayClick}
               disabled={loading}
-              className="p-2 text-gray-600 hover:bg-gray-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-wait"
+              className="p-2.5 text-[#71767a] hover:bg-[#181818]/50 hover:text-white rounded-full transition-all duration-200 disabled:opacity-50 disabled:cursor-wait hover:scale-105 active:scale-95"
               aria-label="Today"
               title="今天"
+              style={{
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
+              }}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -244,27 +283,27 @@ function GamesToday() {
 
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">NBA比赛</h1>
+        <h1 className="text-3xl font-bold text-white mb-2">NBA比赛</h1>
         {selectedDate && (
-          <p className="text-gray-600">
+          <p className="text-[#71767a]">
             {formatDateForDisplay(selectedDate)}
           </p>
         )}
       </div>
 
       {games.length === 0 && !loading ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <p className="text-gray-600 text-lg">
+        <div className="bg-[#16181c] rounded-xl border border-[#2f3336] p-12 text-center">
+          <p className="text-white text-lg">
             {isSameDay(selectedDate, getChineseDate()) ? '今日暂无比赛' : '该日期暂无比赛'}
           </p>
         </div>
       ) : (
         <div className="relative">
           {loading && games.length > 0 && (
-            <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10 rounded-lg">
+            <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-10 rounded-xl">
               <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mb-2"></div>
-                <p className="text-gray-600 text-sm">加载中...</p>
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#1d9bf0] mb-2"></div>
+                <p className="text-[#71767a] text-sm">加载中...</p>
               </div>
             </div>
           )}
@@ -280,7 +319,7 @@ function GamesToday() {
         <button
           onClick={() => fetchGames()}
           disabled={loading}
-          className="px-4 py-2 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-wait flex items-center gap-2"
+          className="px-4 py-2 bg-[#1d9bf0] text-white rounded-full hover:bg-[#1a8cd8] transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-wait flex items-center gap-2"
         >
           {loading && (
             <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
