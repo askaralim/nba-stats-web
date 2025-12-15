@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
@@ -10,6 +10,12 @@ function GameDetails() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const gameRef = useRef(null); // Use ref to track current game without causing re-renders
+
+  // Update ref whenever game changes
+  useEffect(() => {
+    gameRef.current = game;
+  }, [game]);
 
   const fetchGameDetails = useCallback(async (isRefresh = false) => {
     try {
@@ -26,8 +32,8 @@ function GameDetails() {
       const data = await response.json();
       
       // If refreshing, only update if data changed to prevent unnecessary re-renders
-      if (isRefresh && game) {
-        const gameChanged = JSON.stringify(game) !== JSON.stringify(data);
+      if (isRefresh && gameRef.current) {
+        const gameChanged = JSON.stringify(gameRef.current) !== JSON.stringify(data);
         if (gameChanged) {
           setGame(data);
         }
@@ -44,7 +50,7 @@ function GameDetails() {
         setLoading(false);
       }
     }
-  }, [gameId, game]);
+  }, [gameId]); // Removed 'game' from dependencies to prevent infinite loop
 
   useEffect(() => {
     fetchGameDetails();
