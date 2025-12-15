@@ -36,201 +36,174 @@ const getTomorrowDate = () => {
   return tomorrow;
 };
 
+// Loading component for individual widgets
+const LoadingSpinner = ({ size = 'small' }) => (
+  <div className="flex items-center justify-center py-8">
+    <div className={`inline-block animate-spin rounded-full border-b-2 border-[#1d9bf0] ${
+      size === 'small' ? 'h-6 w-6' : 'h-8 w-8'
+    }`}></div>
+  </div>
+);
+
 function Home() {
   const [todayGames, setTodayGames] = useState([]);
   const [upcomingGames, setUpcomingGames] = useState([]);
   const [topPerformers, setTopPerformers] = useState([]);
   const [leagueLeaders, setLeagueLeaders] = useState({});
   const [latestNews, setLatestNews] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  
+  // Individual loading states for each widget
+  const [loadingStates, setLoadingStates] = useState({
+    todayGames: true,
+    upcomingGames: true,
+    topPerformers: true,
+    leagueLeaders: true,
+    news: true
+  });
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+    const today = getChineseDate();
+    const tomorrow = getTomorrowDate();
+    const todayParam = formatDateForAPI(today);
+    const tomorrowParam = formatDateForAPI(tomorrow);
 
-        const today = getChineseDate();
-        const tomorrow = getTomorrowDate();
-        const todayParam = formatDateForAPI(today);
-        const tomorrowParam = formatDateForAPI(tomorrow);
-
-        // Fetch all data in parallel
-        const [gamesTodayRes, gamesTomorrowRes, playersRes, newsRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/nba/games/today?date=${todayParam}`).catch(() => null),
-          fetch(`${API_BASE_URL}/api/nba/games/today?date=${tomorrowParam}`).catch(() => null),
-          fetch(`${API_BASE_URL}/api/nba/stats/players?season=2026|2&limit=100&sort=offensive.avgPoints:desc`).catch(() => null),
-          fetch(`${API_BASE_URL}/api/nba/news`).catch(() => null)
-        ]);
-
-        // Process today's games
-        let todayGamesList = [];
-        if (gamesTodayRes?.ok) {
-          const gamesData = await gamesTodayRes.json();
-          todayGamesList = gamesData.games || [];
-          setTodayGames(todayGamesList);
-        }
-
-        // Process tomorrow's games (upcoming)
-        if (gamesTomorrowRes?.ok) {
-          const gamesData = await gamesTomorrowRes.json();
-          setUpcomingGames((gamesData.games || []).slice(0, 5));
-        }
-
-        // Process player stats for season leaders (Top Performers Widget)
-        if (playersRes?.ok) {
-          const playersData = await playersRes.json();
-          const players = playersData.players || [];
-          
-          // Get top performers (top 5 in PTS, AST, REB)
-          const topPoints = players
-            .filter(p => p.stats?.avgPoints?.value && !isNaN(parseFloat(p.stats.avgPoints.value)))
-            .sort((a, b) => parseFloat(b.stats.avgPoints.value) - parseFloat(a.stats.avgPoints.value))
-            .slice(0, 3);
-          
-          const topAssists = players
-            .filter(p => p.stats?.avgAssists?.value && !isNaN(parseFloat(p.stats.avgAssists.value)))
-            .sort((a, b) => parseFloat(b.stats.avgAssists.value) - parseFloat(a.stats.avgAssists.value))
-            .slice(0, 3);
-          
-          const topRebounds = players
-            .filter(p => p.stats?.avgRebounds?.value && !isNaN(parseFloat(p.stats.avgRebounds.value)))
-            .sort((a, b) => parseFloat(b.stats.avgRebounds.value) - parseFloat(a.stats.avgRebounds.value))
-            .slice(0, 3);
-
-          setTopPerformers({
-            points: topPoints,
-            assists: topAssists,
-            rebounds: topRebounds
-          });
-        }
-
-        // Fetch game details for completed games today to get today's top performers
-        const completedGames = todayGamesList.filter(game => game.gameStatus === 3); // Status 3 = Final
+    // Fetch all data independently in parallel - each updates its own state when ready
+    // 1. Today's Games (highest priority - shown first)
+    fetch(`${API_BASE_URL}/api/nba/games/today?date=${todayParam}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        const games = data?.games || [];
+        setTodayGames(games);
+        setLoadingStates(prev => ({ ...prev, todayGames: false }));
+        
+        // After today's games load, fetch game details for completed games (for today's top performers)
+        const completedGames = games.filter(game => game.gameStatus === 3);
         if (completedGames.length > 0) {
-          // Fetch game details for completed games in parallel
-          const gameDetailsPromises = completedGames.map(game =>
-            fetch(`${API_BASE_URL}/api/nba/games/${game.gameId}`)
-              .then(res => res.ok ? res.json() : null)
-              .catch(() => null)
-          );
-
-          const gameDetailsResults = await Promise.all(gameDetailsPromises);
-          
-          // Extract all players from all games
-          const allPlayers = [];
-          gameDetailsResults.forEach((gameDetail) => {
-            if (!gameDetail?.boxscore?.teams) return;
-            
-            gameDetail.boxscore.teams.forEach(team => {
-              // Process starters
-              if (team.starters && Array.isArray(team.starters)) {
-                team.starters.forEach(player => {
-                  if (player.stats && player.athleteId) {
-                    allPlayers.push({
-                      id: player.athleteId,
-                      name: player.name,
-                      team: team.teamName,
-                      teamAbbreviation: team.teamAbbreviation,
-                      headshot: player.headshot,
-                      points: parseInt(player.stats.points) || 0,
-                      rebounds: parseInt(player.stats.rebounds) || 0,
-                      assists: parseInt(player.stats.assists) || 0
-                    });
-                  }
-                });
-              }
+          Promise.all(
+            completedGames.map(game =>
+              fetch(`${API_BASE_URL}/api/nba/games/${game.gameId}`)
+                .then(res => res.ok ? res.json() : null)
+                .catch(() => null)
+            )
+          ).then(gameDetailsResults => {
+            const allPlayers = [];
+            gameDetailsResults.forEach((gameDetail) => {
+              if (!gameDetail?.boxscore?.teams) return;
               
-              // Process bench
-              if (team.bench && Array.isArray(team.bench)) {
-                team.bench.forEach(player => {
-                  if (player.stats && player.athleteId) {
-                    allPlayers.push({
-                      id: player.athleteId,
-                      name: player.name,
-                      team: team.teamName,
-                      teamAbbreviation: team.teamAbbreviation,
-                      headshot: player.headshot,
-                      points: parseInt(player.stats.points) || 0,
-                      rebounds: parseInt(player.stats.rebounds) || 0,
-                      assists: parseInt(player.stats.assists) || 0
-                    });
-                  }
-                });
-              }
+              gameDetail.boxscore.teams.forEach(team => {
+                if (team.starters && Array.isArray(team.starters)) {
+                  team.starters.forEach(player => {
+                    if (player.stats && player.athleteId) {
+                      allPlayers.push({
+                        id: player.athleteId,
+                        name: player.name,
+                        team: team.teamName,
+                        teamAbbreviation: team.teamAbbreviation,
+                        headshot: player.headshot,
+                        points: parseInt(player.stats.points) || 0,
+                        rebounds: parseInt(player.stats.rebounds) || 0,
+                        assists: parseInt(player.stats.assists) || 0
+                      });
+                    }
+                  });
+                }
+                
+                if (team.bench && Array.isArray(team.bench)) {
+                  team.bench.forEach(player => {
+                    if (player.stats && player.athleteId) {
+                      allPlayers.push({
+                        id: player.athleteId,
+                        name: player.name,
+                        team: team.teamName,
+                        teamAbbreviation: team.teamAbbreviation,
+                        headshot: player.headshot,
+                        points: parseInt(player.stats.points) || 0,
+                        rebounds: parseInt(player.stats.rebounds) || 0,
+                        assists: parseInt(player.stats.assists) || 0
+                      });
+                    }
+                  });
+                }
+              });
             });
-          });
 
-          // Get top 3 in each category for today
-          const todayTopPoints = allPlayers
-            .sort((a, b) => b.points - a.points)
-            .slice(0, 3);
+            const todayTopPoints = allPlayers.sort((a, b) => b.points - a.points).slice(0, 3);
+            const todayTopRebounds = allPlayers.sort((a, b) => b.rebounds - a.rebounds).slice(0, 3);
+            const todayTopAssists = allPlayers.sort((a, b) => b.assists - a.assists).slice(0, 3);
 
-          const todayTopRebounds = allPlayers
-            .sort((a, b) => b.rebounds - a.rebounds)
-            .slice(0, 3);
-
-          const todayTopAssists = allPlayers
-            .sort((a, b) => b.assists - a.assists)
-            .slice(0, 3);
-
-          // Set today's leaders for Quick Stats Widget
-          setLeagueLeaders({
-            points: todayTopPoints,
-            rebounds: todayTopRebounds,
-            assists: todayTopAssists
+            setLeagueLeaders({
+              points: todayTopPoints,
+              rebounds: todayTopRebounds,
+              assists: todayTopAssists
+            });
+            setLoadingStates(prev => ({ ...prev, leagueLeaders: false }));
+          }).catch(() => {
+            setLeagueLeaders({ points: [], rebounds: [], assists: [] });
+            setLoadingStates(prev => ({ ...prev, leagueLeaders: false }));
           });
         } else {
-          // No completed games today, set empty arrays
-          setLeagueLeaders({
-            points: [],
-            rebounds: [],
-            assists: []
-          });
+          setLeagueLeaders({ points: [], rebounds: [], assists: [] });
+          setLoadingStates(prev => ({ ...prev, leagueLeaders: false }));
         }
+      })
+      .catch(() => {
+        setLoadingStates(prev => ({ ...prev, todayGames: false }));
+      });
 
-        // Process news
-        if (newsRes?.ok) {
-          const newsData = await newsRes.json();
-          setLatestNews((newsData.tweets || []).slice(0, 5));
-        }
-      } catch (err) {
-        setError(err.message);
-        console.error('Error fetching dashboard data:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
+    // 2. Upcoming Games (tomorrow)
+    fetch(`${API_BASE_URL}/api/nba/games/today?date=${tomorrowParam}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        setUpcomingGames((data?.games || []).slice(0, 5));
+        setLoadingStates(prev => ({ ...prev, upcomingGames: false }));
+      })
+      .catch(() => {
+        setLoadingStates(prev => ({ ...prev, upcomingGames: false }));
+      });
 
-    fetchDashboardData();
+    // 3. Top Performers (season leaders)
+    fetch(`${API_BASE_URL}/api/nba/stats/players?season=2026|2&limit=100&sort=offensive.avgPoints:desc`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        const players = data?.players || [];
+        
+        const topPoints = players
+          .filter(p => p.stats?.avgPoints?.value && !isNaN(parseFloat(p.stats.avgPoints.value)))
+          .sort((a, b) => parseFloat(b.stats.avgPoints.value) - parseFloat(a.stats.avgPoints.value))
+          .slice(0, 3);
+        
+        const topAssists = players
+          .filter(p => p.stats?.avgAssists?.value && !isNaN(parseFloat(p.stats.avgAssists.value)))
+          .sort((a, b) => parseFloat(b.stats.avgAssists.value) - parseFloat(a.stats.avgAssists.value))
+          .slice(0, 3);
+        
+        const topRebounds = players
+          .filter(p => p.stats?.avgRebounds?.value && !isNaN(parseFloat(p.stats.avgRebounds.value)))
+          .sort((a, b) => parseFloat(b.stats.avgRebounds.value) - parseFloat(a.stats.avgRebounds.value))
+          .slice(0, 3);
+
+        setTopPerformers({
+          points: topPoints,
+          assists: topAssists,
+          rebounds: topRebounds
+        });
+        setLoadingStates(prev => ({ ...prev, topPerformers: false }));
+      })
+      .catch(() => {
+        setLoadingStates(prev => ({ ...prev, topPerformers: false }));
+      });
+
+    // 4. News (can be slower, loads independently)
+    fetch(`${API_BASE_URL}/api/nba/news`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        setLatestNews((data?.tweets || []).slice(0, 5));
+        setLoadingStates(prev => ({ ...prev, news: false }));
+      })
+      .catch(() => {
+        setLoadingStates(prev => ({ ...prev, news: false }));
+      });
   }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#1d9bf0] mb-4"></div>
-          <p className="text-[#71767a]">加载中...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-[#16181c] border border-[#2f3336] rounded-xl p-6 text-center">
-        <p className="text-white font-semibold mb-2">加载失败</p>
-        <p className="text-[#71767a] text-sm mb-4">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="px-4 py-2 bg-[#1d9bf0] text-white rounded-full hover:bg-[#1a8cd8] transition-colors font-medium"
-        >
-          重试
-        </button>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -380,6 +353,9 @@ function Home() {
             今日最佳表现
           </h2>
         </div>
+        {loadingStates.leagueLeaders ? (
+          <LoadingSpinner />
+        ) : (
         <div className="space-y-4">
           {/* Points Leaders */}
           {leagueLeaders.points && Array.isArray(leagueLeaders.points) && leagueLeaders.points.length > 0 && (
@@ -549,6 +525,7 @@ function Home() {
             </div>
           )}
         </div>
+        )}
         </motion.div>
 
         {/* Top Performers Widget */}
@@ -570,6 +547,9 @@ function Home() {
               查看全部
             </Link>
           </div>
+          {loadingStates.topPerformers ? (
+            <LoadingSpinner />
+          ) : (
           <div className="space-y-4">
             {/* Points Leaders */}
             {topPerformers.points && topPerformers.points.length > 0 && (
@@ -691,6 +671,7 @@ function Home() {
               </div>
             )}
           </div>
+          )}
         </motion.div>
       </div>
 
@@ -718,7 +699,9 @@ function Home() {
               </svg>
             </Link>
           </div>
-          {latestNews.length === 0 ? (
+          {loadingStates.news ? (
+            <LoadingSpinner />
+          ) : latestNews.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-[#71767a]">暂无新闻</p>
             </div>
@@ -789,7 +772,9 @@ function Home() {
               </svg>
             </Link>
           </div>
-          {upcomingGames.length === 0 ? (
+          {loadingStates.upcomingGames ? (
+            <LoadingSpinner />
+          ) : upcomingGames.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-[#71767a]">暂无即将开始的比赛</p>
             </div>
