@@ -8,37 +8,58 @@ function GameDetails() {
   const { gameId } = useParams();
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
-  const fetchGameDetails = useCallback(async () => {
+  const fetchGameDetails = useCallback(async (isRefresh = false) => {
     try {
       setError(null);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       const response = await fetch(`${API_BASE_URL}/api/nba/games/${gameId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch game details');
       }
       const data = await response.json();
-      setGame(data);
+      
+      // If refreshing, only update if data changed to prevent unnecessary re-renders
+      if (isRefresh && game) {
+        const gameChanged = JSON.stringify(game) !== JSON.stringify(data);
+        if (gameChanged) {
+          setGame(data);
+        }
+      } else {
+        setGame(data);
+      }
     } catch (err) {
       setError(err.message);
       console.error('Error fetching game details:', err);
     } finally {
-      setLoading(false);
+      if (isRefresh) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
-  }, [gameId]);
+  }, [gameId, game]);
 
   useEffect(() => {
     fetchGameDetails();
+  }, [gameId, fetchGameDetails]);
 
+  useEffect(() => {
     // Auto-refresh every 2 seconds if game is live
+    if (game?.gameStatus !== 2) return;
+
     const interval = setInterval(() => {
-      if (game?.gameStatus === 2) {
-        fetchGameDetails();
-      }
+      fetchGameDetails(true); // Pass isRefresh=true to prevent full reload
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [gameId, game?.gameStatus, fetchGameDetails]);
+  }, [game?.gameStatus, fetchGameDetails]);
 
   if (loading) {
     return (
@@ -116,7 +137,15 @@ function GameDetails() {
       </Link>
 
       {/* Game Header */}
-      <div className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6 mb-6">
+      <div className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6 mb-6 relative">
+        {refreshing && (
+          <div className="absolute top-4 right-4 z-10">
+            <div className="bg-[#16181c] border border-[#2f3336] rounded-full px-3 py-1.5 flex items-center gap-2 shadow-lg">
+              <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-[#1d9bf0]"></div>
+              <p className="text-[#71767a] text-xs">更新中...</p>
+            </div>
+          </div>
+        )}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-white">比赛详情</h1>
           <span

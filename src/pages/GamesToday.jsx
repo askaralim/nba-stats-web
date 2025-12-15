@@ -7,6 +7,7 @@ import { API_BASE_URL } from '../config';
 function GamesToday() {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   
   // Get current date in Chinese timezone
@@ -79,10 +80,14 @@ function GamesToday() {
            date1.getDate() === date2.getDate();
   };
 
-  const fetchGames = useCallback(async (targetDate = null) => {
+  const fetchGames = useCallback(async (targetDate = null, isRefresh = false) => {
     try {
       setError(null);
-      setLoading(true);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       const dateToFetch = targetDate || selectedDate;
       const dateParam = formatDateForAPI(dateToFetch);
       
@@ -90,15 +95,44 @@ function GamesToday() {
       if (!response.ok) {
         throw new Error('加载比赛失败');
       }
-             const data = await response.json();
-             setGames(data.games || []);
+      const data = await response.json();
+      const newGames = data.games || [];
+      
+      // If refreshing, merge updates to prevent unnecessary re-renders
+      if (isRefresh && games.length > 0) {
+        setGames(prevGames => {
+          // Create a map of existing games by gameId
+          const gamesMap = new Map(prevGames.map(g => [g.gameId, g]));
+          
+          // Update only changed games
+          newGames.forEach(newGame => {
+            const existingGame = gamesMap.get(newGame.gameId);
+            if (existingGame) {
+              // Only update if data actually changed
+              if (JSON.stringify(existingGame) !== JSON.stringify(newGame)) {
+                gamesMap.set(newGame.gameId, newGame);
+              }
+            } else {
+              gamesMap.set(newGame.gameId, newGame);
+            }
+          });
+          
+          return Array.from(gamesMap.values());
+        });
+      } else {
+        setGames(newGames);
+      }
     } catch (err) {
       setError(err.message);
       console.error('Error fetching games:', err);
     } finally {
-      setLoading(false);
+      if (isRefresh) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
     }
-  }, [selectedDate]);
+  }, [selectedDate, games.length]);
 
   useEffect(() => {
     fetchGames();
@@ -110,7 +144,7 @@ function GamesToday() {
     if (!hasLiveGames) return;
 
     const interval = setInterval(() => {
-      fetchGames();
+      fetchGames(null, true); // Pass isRefresh=true to prevent full reload
     }, 2000);
 
     return () => clearInterval(interval);
@@ -299,6 +333,14 @@ function GamesToday() {
         </div>
       ) : (
         <div className="relative">
+          {refreshing && games.length > 0 && (
+            <div className="absolute top-4 right-4 z-10">
+              <div className="bg-[#16181c] border border-[#2f3336] rounded-full px-3 py-1.5 flex items-center gap-2 shadow-lg">
+                <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-[#1d9bf0]"></div>
+                <p className="text-[#71767a] text-xs">更新中...</p>
+              </div>
+            </div>
+          )}
           {loading && games.length > 0 && (
             <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-10 rounded-xl">
               <div className="text-center">

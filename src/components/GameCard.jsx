@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom';
+import { memo } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 
-function GameCard({ game }) {
+const GameCard = memo(function GameCard({ game }) {
   // Team color mapping for left border
   const getTeamColor = (teamAbbreviation) => {
     const colors = {
@@ -206,6 +207,8 @@ function GameCard({ game }) {
       </Link>
     </motion.div>
   );
-}
+});
+
+GameCard.displayName = 'GameCard';
 
 export default GameCard;
