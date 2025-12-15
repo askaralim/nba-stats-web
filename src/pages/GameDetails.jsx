@@ -38,7 +38,7 @@ function GameDetails() {
           setGame(data);
         }
       } else {
-        setGame(data);
+      setGame(data);
       }
     } catch (err) {
       setError(err.message);
@@ -47,7 +47,7 @@ function GameDetails() {
       if (isRefresh) {
         setRefreshing(false);
       } else {
-        setLoading(false);
+      setLoading(false);
       }
     }
   }, [gameId]); // Removed 'game' from dependencies to prevent infinite loop
@@ -249,22 +249,22 @@ function GameDetails() {
               to={`/teams/${game.awayTeam.teamTricode?.toLowerCase() || game.awayTeam.teamId}`}
               className="block hover:opacity-80 transition-opacity"
             >
-              <img
-                src={game.awayTeam.logo}
-                alt={game.awayTeam.teamName}
+            <img
+              src={game.awayTeam.logo}
+              alt={game.awayTeam.teamName}
                 className="w-24 h-24 mx-auto mb-4 object-contain cursor-pointer"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
             </Link>
             <Link
               to={`/teams/${game.awayTeam.teamTricode?.toLowerCase() || game.awayTeam.teamId}`}
               className="block hover:text-[#1d9bf0] transition-colors"
             >
               <h2 className="text-xl font-bold text-white mb-1">
-                {game.awayTeam.teamCity} {game.awayTeam.teamName}
-              </h2>
+              {game.awayTeam.teamCity} {game.awayTeam.teamName}
+            </h2>
             </Link>
             <p className="text-[#71767a] mb-2">
               {game.awayTeam.wins}-{game.awayTeam.losses}
@@ -280,22 +280,22 @@ function GameDetails() {
               to={`/teams/${game.homeTeam.teamTricode?.toLowerCase() || game.homeTeam.teamId}`}
               className="block hover:opacity-80 transition-opacity"
             >
-              <img
-                src={game.homeTeam.logo}
-                alt={game.homeTeam.teamName}
+            <img
+              src={game.homeTeam.logo}
+              alt={game.homeTeam.teamName}
                 className="w-24 h-24 mx-auto mb-4 object-contain cursor-pointer"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
             </Link>
             <Link
               to={`/teams/${game.homeTeam.teamTricode?.toLowerCase() || game.homeTeam.teamId}`}
               className="block hover:text-[#1d9bf0] transition-colors"
             >
               <h2 className="text-xl font-bold text-white mb-1">
-                {game.homeTeam.teamCity} {game.homeTeam.teamName}
-              </h2>
+              {game.homeTeam.teamCity} {game.homeTeam.teamName}
+            </h2>
             </Link>
             <p className="text-[#71767a] mb-2">
               {game.homeTeam.wins}-{game.homeTeam.losses}
@@ -346,7 +346,7 @@ function GameDetails() {
                       to={`/teams/${game.awayTeam.teamTricode?.toLowerCase() || game.awayTeam.teamId}`}
                       className="hover:text-[#1d9bf0] transition-colors"
                     >
-                      {game.awayTeam.teamCity} {game.awayTeam.teamName}
+                    {game.awayTeam.teamCity} {game.awayTeam.teamName}
                     </Link>
                   </td>
                   {game.awayTeam.periods.map((period, idx) => (
@@ -364,7 +364,7 @@ function GameDetails() {
                       to={`/teams/${game.homeTeam.teamTricode?.toLowerCase() || game.homeTeam.teamId}`}
                       className="hover:text-[#1d9bf0] transition-colors"
                     >
-                      {game.homeTeam.teamCity} {game.homeTeam.teamName}
+                    {game.homeTeam.teamCity} {game.homeTeam.teamName}
                     </Link>
                   </td>
                   {game.homeTeam.periods.map((period, idx) => (
@@ -409,7 +409,7 @@ function GameDetails() {
                   />
                 )}
                 {game.boxscore.teams[0]?.teamName || 'Team 1'}
-              </h3>
+                </h3>
               {/* Points Card */}
               {topPerformerObjects.team1.points && topPerformerObjects.team1.points.length > 0 && (
                 <div className="bg-[#181818]/50 rounded-xl border border-[#2f3336]/30 p-4">
@@ -457,7 +457,7 @@ function GameDetails() {
                   <h4 className="text-sm font-semibold text-[#71767a] mb-3 flex items-center gap-2">
                     篮板
                   </h4>
-                  <div className="space-y-2">
+                <div className="space-y-2">
                     {topPerformerObjects.team1.rebounds.map((player) => (
                       <Link
                         key={getPlayerId(player)}
@@ -613,9 +613,9 @@ function GameDetails() {
                         </div>
                       </Link>
                     ))}
-                  </div>
                 </div>
-              )}
+              </div>
+            )}
 
               {/* Blocks Card */}
               {topPerformerObjects.team1.blocks && topPerformerObjects.team1.blocks.length > 0 && (
@@ -673,7 +673,7 @@ function GameDetails() {
                   />
                 )}
                 {game.boxscore.teams[1]?.teamName || 'Team 2'}
-              </h3>
+                </h3>
 
               {/* Points Card */}
               {topPerformerObjects.team2.points && topPerformerObjects.team2.points.length > 0 && (
@@ -804,7 +804,7 @@ function GameDetails() {
                   <h4 className="text-sm font-semibold text-[#71767a] mb-3 flex items-center gap-2">
                     +/-
                   </h4>
-                  <div className="space-y-2">
+                <div className="space-y-2">
                     {topPerformerObjects.team2.plusMinus.map((player) => (
                       <Link
                         key={getPlayerId(player)}
@@ -1146,8 +1146,8 @@ function GameDetails() {
                     </table>
                   </div>
                 </motion.div>
-              )}
-            </div>
+            )}
+          </div>
           ))}
         </div>
       )}

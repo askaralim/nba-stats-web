@@ -129,7 +129,7 @@ function GamesToday() {
       if (isRefresh) {
         setRefreshing(false);
       } else {
-        setLoading(false);
+      setLoading(false);
       }
     }
   }, [selectedDate, games.length]);
@@ -350,9 +350,9 @@ function GamesToday() {
             </div>
           )}
           <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity ${loading && games.length > 0 ? 'opacity-50' : 'opacity-100'}`}>
-            {games.map((game) => (
-              <GameCard key={game.gameId} game={game} />
-            ))}
+          {games.map((game) => (
+            <GameCard key={game.gameId} game={game} />
+          ))}
           </div>
         </div>
       )}

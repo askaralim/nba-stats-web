@@ -49,8 +49,8 @@ const GameCard = memo(function GameCard({ game }) {
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
     >
-      <Link
-        to={`/games/${game.gameId}`}
+    <Link
+      to={`/games/${game.gameId}`}
         className="block group relative"
       >
         {/* Glassmorphism Card */}
@@ -72,20 +72,20 @@ const GameCard = memo(function GameCard({ game }) {
               <motion.span
                 whileHover={{ scale: 1.05 }}
                 className={`px-4 py-1.5 rounded-full text-xs font-bold border backdrop-blur-sm ${getStatusColor(
-                  game.gameStatus
-                )}`}
+              game.gameStatus
+            )}`}
                 style={{
                   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
                 }}
-              >
-                {statusInfo[game.gameStatus] || game.gameStatusText}
-                {game.gameStatus === 2 && game.gameStatusText && ` - ${game.gameStatusText}`}
+          >
+            {statusInfo[game.gameStatus] || game.gameStatusText}
+            {game.gameStatus === 2 && game.gameStatusText && ` - ${game.gameStatusText}`}
               </motion.span>
-            </div>
+        </div>
 
-            {/* Teams and Scores */}
+        {/* Teams and Scores */}
             <div className="space-y-5">
-              {/* Away Team */}
+          {/* Away Team */}
               <motion.div 
                 className="flex items-center justify-between"
                 whileHover={{ x: 4 }}
@@ -94,34 +94,34 @@ const GameCard = memo(function GameCard({ game }) {
                 <div className="flex items-center space-x-4 flex-1 min-w-0">
                   {/* Larger Centered Logo */}
                   <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center bg-[#181818]/50 rounded-xl p-2 border border-[#2f3336]/50 backdrop-blur-sm">
-                    <img
-                      src={game.awayTeam.logo}
-                      alt={game.awayTeam.teamName}
+              <img
+                src={game.awayTeam.logo}
+                alt={game.awayTeam.teamName}
                       className="w-full h-full object-contain"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
-                    />
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-white text-lg truncate">
-                      {game.awayTeam.teamCity} {game.awayTeam.teamName}
-                    </div>
-                    <div className="text-sm text-[#71767a] mt-0.5">
-                      {game.awayTeam.wins}-{game.awayTeam.losses}
-                    </div>
-                  </div>
+                  {game.awayTeam.teamCity} {game.awayTeam.teamName}
                 </div>
-                {game.awayTeam.score !== null && (
+                    <div className="text-sm text-[#71767a] mt-0.5">
+                  {game.awayTeam.wins}-{game.awayTeam.losses}
+                </div>
+              </div>
+            </div>
+            {game.awayTeam.score !== null && (
                   <motion.div 
                     className="text-3xl font-bold text-white ml-4 flex-shrink-0"
                     initial={{ scale: 0.9 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.1 }}
                   >
-                    {game.awayTeam.score}
+                {game.awayTeam.score}
                   </motion.div>
-                )}
+            )}
               </motion.div>
 
               {/* Divider */}
@@ -129,9 +129,9 @@ const GameCard = memo(function GameCard({ game }) {
                 <div className="h-px w-full bg-gradient-to-r from-transparent via-[#2f3336] to-transparent" />
                 <span className="px-3 text-[#71767a] text-xs">VS</span>
                 <div className="h-px w-full bg-gradient-to-r from-transparent via-[#2f3336] to-transparent" />
-              </div>
+          </div>
 
-              {/* Home Team */}
+          {/* Home Team */}
               <motion.div 
                 className="flex items-center justify-between"
                 whileHover={{ x: 4 }}
@@ -140,39 +140,39 @@ const GameCard = memo(function GameCard({ game }) {
                 <div className="flex items-center space-x-4 flex-1 min-w-0">
                   {/* Larger Centered Logo */}
                   <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center bg-[#181818]/50 rounded-xl p-2 border border-[#2f3336]/50 backdrop-blur-sm">
-                    <img
-                      src={game.homeTeam.logo}
-                      alt={game.homeTeam.teamName}
+              <img
+                src={game.homeTeam.logo}
+                alt={game.homeTeam.teamName}
                       className="w-full h-full object-contain"
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
-                    />
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-white text-lg truncate">
-                      {game.homeTeam.teamCity} {game.homeTeam.teamName}
-                    </div>
-                    <div className="text-sm text-[#71767a] mt-0.5">
-                      {game.homeTeam.wins}-{game.homeTeam.losses}
-                    </div>
-                  </div>
+                  {game.homeTeam.teamCity} {game.homeTeam.teamName}
                 </div>
-                {game.homeTeam.score !== null && (
+                    <div className="text-sm text-[#71767a] mt-0.5">
+                  {game.homeTeam.wins}-{game.homeTeam.losses}
+                </div>
+              </div>
+            </div>
+            {game.homeTeam.score !== null && (
                   <motion.div 
                     className="text-3xl font-bold text-white ml-4 flex-shrink-0"
                     initial={{ scale: 0.9 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.15 }}
                   >
-                    {game.homeTeam.score}
+                {game.homeTeam.score}
                   </motion.div>
-                )}
+            )}
               </motion.div>
-            </div>
+        </div>
 
-            {/* Game Time */}
-            {game.gameStatus === 1 && game.gameEt && (
+        {/* Game Time */}
+        {game.gameStatus === 1 && game.gameEt && (
               <motion.div 
                 className="mt-5 pt-5 border-t border-[#2f3336]/50 text-sm text-[#71767a] text-center"
                 initial={{ opacity: 0 }}
@@ -184,12 +184,12 @@ const GameCard = memo(function GameCard({ game }) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span>
-                    {new Date(game.gameEt).toLocaleString('zh-CN', {
+            {new Date(game.gameEt).toLocaleString('zh-CN', {
                       hour: '2-digit',
-                      minute: '2-digit',
+              minute: '2-digit',
                       timeZone: 'Asia/Shanghai',
                       hour12: false
-                    })}
+            })}
                   </span>
                 </div>
               </motion.div>
@@ -203,8 +203,8 @@ const GameCard = memo(function GameCard({ game }) {
               background: `linear-gradient(135deg, ${primaryColor}15 0%, transparent 50%)`,
             }}
           />
-        </div>
-      </Link>
+      </div>
+    </Link>
     </motion.div>
   );
 });

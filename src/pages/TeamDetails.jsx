@@ -305,17 +305,17 @@ function TeamDetails() {
       {/* Player Statistics Table */}
       {playerStats.length > 0 && (
         <motion.div 
-          className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6"
+          className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6 overflow-hidden"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.2 }}
         >
           <h2 className="text-xl font-bold text-white mb-4">球员统计</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto relative -mx-6 px-6" style={{ isolation: 'isolate' }}>
+            <table className="w-full text-sm border-collapse relative">
               <thead>
                 <tr className="border-b border-[#2f3336]/30">
-                  <th className="text-left py-3 px-3 font-medium text-white sticky left-0 z-10 bg-[#16181c]">球员</th>
+                  <th className="text-left py-3 px-3 font-medium text-white sticky left-0 bg-[#16181c] border-r border-[#2f3336]/50 shadow-[2px_0_4px_rgba(0,0,0,0.3)]" style={{ position: 'sticky', left: 0, zIndex: 1000 }}>球员</th>
                   <th className="text-center py-3 px-3 font-medium text-white">场次</th>
                   <th className="text-center py-3 px-3 font-medium text-white">先发</th>
                   <th className="text-center py-3 px-3 font-medium text-white">时间</th>
@@ -332,17 +332,32 @@ function TeamDetails() {
                 </tr>
               </thead>
               <tbody>
-                {playerStats.map((player, index) => (
-                  <motion.tr
+                {playerStats.map((player, index) => {
+                  const isEven = index % 2 === 0;
+                  return (
+                  <tr
                     key={player.id || index}
                     className={`border-b border-[#2f3336]/20 transition-all duration-200 hover:bg-[#181818]/50 ${
-                      index % 2 === 0 ? 'bg-[#16181c]/30' : 'bg-[#16181c]/10'
+                      isEven ? 'bg-[#0f1114]' : 'bg-[#16181c]'
                     }`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.2, delay: 0.25 + index * 0.03 }}
+                    onMouseEnter={(e) => {
+                      const stickyCell = e.currentTarget.querySelector('td[data-sticky]');
+                      if (stickyCell) {
+                        stickyCell.style.backgroundColor = '#181818';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      const stickyCell = e.currentTarget.querySelector('td[data-sticky]');
+                      if (stickyCell) {
+                        stickyCell.style.backgroundColor = isEven ? '#0f1114' : '#16181c';
+                      }
+                    }}
                   >
-                    <td className="py-3 px-3 sticky left-0 z-10 bg-inherit">
+                    <td 
+                      data-sticky
+                      className="py-3 px-3 sticky left-0 transition-colors duration-200 border-r border-[#2f3336]/50 shadow-[2px_0_4px_rgba(0,0,0,0.3)]" 
+                      style={{ position: 'sticky', left: 0, zIndex: 1000, backgroundColor: isEven ? '#0f1114' : '#16181c' }}
+                    >
                       {player.id ? (
                         <Link
                           to={`/players/${player.id}`}
@@ -368,8 +383,9 @@ function TeamDetails() {
                     <td className="py-3 px-3 text-center text-white/90">{player.avgTurnovers}</td>
                     <td className="py-3 px-3 text-center text-white/90">{player.avgFouls}</td>
                     <td className="py-3 px-3 text-center text-white/90">{player.assistTurnoverRatio}</td>
-                  </motion.tr>
-                ))}
+                  </tr>
+                );
+                })}
               </tbody>
             </table>
           </div>

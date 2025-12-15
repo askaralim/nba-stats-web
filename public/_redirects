@@ -1,0 +1,6 @@
+# Cloudflare Pages SPA Routing Configuration
+# This file handles client-side routing for React Router
+# All routes are redirected to index.html
+
+/*    /index.html   200
+
