@@ -67,6 +67,83 @@ function GameDetails() {
     return () => clearInterval(interval);
   }, [game?.gameStatus, fetchGameDetails]);
 
+  // Helper function to get player identifier consistently
+  const getPlayerId = (player) => {
+    return player?.athleteId || player?.id || player?.name || '';
+  };
+
+  // Get top performer objects with full data for widget display (separated by team)
+  const getTopPerformerObjects = useCallback(() => {
+    if (!game?.boxscore?.teams || game.boxscore.teams.length < 2) {
+      return { 
+        team1: { points: [], rebounds: [], assists: [], plusMinus: [], steals: [], blocks: [] },
+        team2: { points: [], rebounds: [], assists: [], plusMinus: [], steals: [], blocks: [] }
+      };
+    }
+
+    const [team1, team2] = game.boxscore.teams;
+    
+    // Get players for each team
+    const getTeamPlayers = (team) => {
+      const players = [];
+      if (team.starters) {
+        team.starters.forEach(player => {
+          players.push({
+            ...player,
+            teamName: team.teamName,
+            teamLogo: team.teamLogo,
+            stats: player.stats || {}
+          });
+        });
+      }
+      if (team.bench) {
+        team.bench.forEach(player => {
+          players.push({
+            ...player,
+            teamName: team.teamName,
+            teamLogo: team.teamLogo,
+            stats: player.stats || {}
+          });
+        });
+      }
+      return players;
+    };
+
+    const team1Players = getTeamPlayers(team1);
+    const team2Players = getTeamPlayers(team2);
+
+    // Get top 3 performers for each category for each team
+    const getTopPerformers = (players, category, limit = 3) => {
+      if (players.length === 0) return [];
+      return [...players].sort((a, b) => {
+        const aVal = a.stats[category] || (category === 'plusMinus' ? -Infinity : 0);
+        const bVal = b.stats[category] || (category === 'plusMinus' ? -Infinity : 0);
+        return bVal - aVal;
+      }).slice(0, limit);
+    };
+
+    return {
+      team1: {
+        points: getTopPerformers(team1Players, 'points'),
+        rebounds: getTopPerformers(team1Players, 'rebounds'),
+        assists: getTopPerformers(team1Players, 'assists'),
+        plusMinus: getTopPerformers(team1Players, 'plusMinus'),
+        steals: getTopPerformers(team1Players, 'steals'),
+        blocks: getTopPerformers(team1Players, 'blocks')
+      },
+      team2: {
+        points: getTopPerformers(team2Players, 'points'),
+        rebounds: getTopPerformers(team2Players, 'rebounds'),
+        assists: getTopPerformers(team2Players, 'assists'),
+        plusMinus: getTopPerformers(team2Players, 'plusMinus'),
+        steals: getTopPerformers(team2Players, 'steals'),
+        blocks: getTopPerformers(team2Players, 'blocks')
+      }
+    };
+  }, [game]);
+
+  const topPerformerObjects = getTopPerformerObjects();
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -303,6 +380,551 @@ function GameDetails() {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Top Performers Widget */}
+      {game.boxscore && game.boxscore.teams && game.boxscore.teams.length >= 2 && topPerformerObjects.team1 && (
+        <motion.div
+          className="bg-[#16181c]/80 backdrop-blur-xl rounded-2xl border border-[#2f3336]/50 p-6 mb-6 shadow-lg shadow-black/20"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+            <span>⭐</span>
+            本场最佳表现
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Team 1 Column */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                {game.boxscore.teams[0]?.teamLogo && (
+                  <img
+                    src={game.boxscore.teams[0].teamLogo}
+                    alt={game.boxscore.teams[0].teamName}
+                    className="w-6 h-6 object-contain"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                )}
+                {game.boxscore.teams[0]?.teamName || 'Team 1'}
+              </h3>
+              {/* Points Card */}
+              {topPerformerObjects.team1.points && topPerformerObjects.team1.points.length > 0 && (
+                <div className="bg-[#181818]/50 rounded-xl border border-[#2f3336]/30 p-4">
+                  <h4 className="text-sm font-semibold text-[#71767a] mb-3 flex items-center gap-2">
+                    得分
+                  </h4>
+                  <div className="space-y-2">
+                    {topPerformerObjects.team1.points.map((player) => (
+                      <Link
+                        key={getPlayerId(player)}
+                        to={player.athleteId ? `/players/${player.athleteId}` : '#'}
+                        className="flex items-center justify-between p-2 bg-gradient-to-r from-red-900/20 to-red-800/10 rounded-lg border border-red-800/20 hover:border-red-700/40 hover:bg-red-900/30 transition-all group"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {player.headshot && (
+                            <img
+                              src={player.headshot}
+                              alt={player.name}
+                              className="w-8 h-8 rounded-full object-cover border border-[#2f3336] flex-shrink-0"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white text-sm font-medium truncate group-hover:text-[#1d9bf0] transition-colors">
+                              {player.name}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-xl font-bold text-red-400">
+                            {player.stats.points || 0}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Rebounds Card */}
+              {topPerformerObjects.team1.rebounds && topPerformerObjects.team1.rebounds.length > 0 && (
+                <div className="bg-[#181818]/50 rounded-xl border border-[#2f3336]/30 p-4">
+                  <h4 className="text-sm font-semibold text-[#71767a] mb-3 flex items-center gap-2">
+                    篮板
+                  </h4>
+                  <div className="space-y-2">
+                    {topPerformerObjects.team1.rebounds.map((player) => (
+                      <Link
+                        key={getPlayerId(player)}
+                        to={player.athleteId ? `/players/${player.athleteId}` : '#'}
+                        className="flex items-center justify-between p-2 bg-gradient-to-r from-green-900/20 to-green-800/10 rounded-lg border border-green-800/20 hover:border-green-700/40 hover:bg-green-900/30 transition-all group"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {player.headshot && (
+                            <img
+                              src={player.headshot}
+                              alt={player.name}
+                              className="w-8 h-8 rounded-full object-cover border border-[#2f3336] flex-shrink-0"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white text-sm font-medium truncate group-hover:text-[#1d9bf0] transition-colors">
+                              {player.name}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-xl font-bold text-green-400">
+                            {player.stats.rebounds || 0}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Assists Card */}
+              {topPerformerObjects.team1.assists && topPerformerObjects.team1.assists.length > 0 && (
+                <div className="bg-[#181818]/50 rounded-xl border border-[#2f3336]/30 p-4">
+                  <h4 className="text-sm font-semibold text-[#71767a] mb-3 flex items-center gap-2">
+                    助攻
+                  </h4>
+                  <div className="space-y-2">
+                    {topPerformerObjects.team1.assists.map((player) => (
+                      <Link
+                        key={getPlayerId(player)}
+                        to={player.athleteId ? `/players/${player.athleteId}` : '#'}
+                        className="flex items-center justify-between p-2 bg-gradient-to-r from-blue-900/20 to-blue-800/10 rounded-lg border border-blue-800/20 hover:border-blue-700/40 hover:bg-blue-900/30 transition-all group"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {player.headshot && (
+                            <img
+                              src={player.headshot}
+                              alt={player.name}
+                              className="w-8 h-8 rounded-full object-cover border border-[#2f3336] flex-shrink-0"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white text-sm font-medium truncate group-hover:text-[#1d9bf0] transition-colors">
+                              {player.name}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-xl font-bold text-blue-400">
+                            {player.stats.assists || 0}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Plus/Minus Card */}
+              {topPerformerObjects.team1.plusMinus && topPerformerObjects.team1.plusMinus.length > 0 && (
+                <div className="bg-[#181818]/50 rounded-xl border border-[#2f3336]/30 p-4">
+                  <h4 className="text-sm font-semibold text-[#71767a] mb-3 flex items-center gap-2">
+                    +/-
+                  </h4>
+                  <div className="space-y-2">
+                    {topPerformerObjects.team1.plusMinus.map((player) => (
+                      <Link
+                        key={getPlayerId(player)}
+                        to={player.athleteId ? `/players/${player.athleteId}` : '#'}
+                        className="flex items-center justify-between p-2 bg-gradient-to-r from-purple-900/20 to-purple-800/10 rounded-lg border border-purple-800/20 hover:border-purple-700/40 hover:bg-purple-900/30 transition-all group"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {player.headshot && (
+                            <img
+                              src={player.headshot}
+                              alt={player.name}
+                              className="w-8 h-8 rounded-full object-cover border border-[#2f3336] flex-shrink-0"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white text-sm font-medium truncate group-hover:text-[#1d9bf0] transition-colors">
+                              {player.name}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className={`text-xl font-bold ${
+                            (player.stats.plusMinus || 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                          }`}>
+                            {(player.stats.plusMinus || 0) >= 0 ? '+' : ''}{player.stats.plusMinus || 0}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Steals Card */}
+              {topPerformerObjects.team1.steals && topPerformerObjects.team1.steals.length > 0 && (
+                <div className="bg-[#181818]/50 rounded-xl border border-[#2f3336]/30 p-4">
+                  <h4 className="text-sm font-semibold text-[#71767a] mb-3 flex items-center gap-2">
+                    抢断
+                  </h4>
+                  <div className="space-y-2">
+                    {topPerformerObjects.team1.steals.map((player) => (
+                      <Link
+                        key={getPlayerId(player)}
+                        to={player.athleteId ? `/players/${player.athleteId}` : '#'}
+                        className="flex items-center justify-between p-2 bg-gradient-to-r from-yellow-900/20 to-yellow-800/10 rounded-lg border border-yellow-800/20 hover:border-yellow-700/40 hover:bg-yellow-900/30 transition-all group"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {player.headshot && (
+                            <img
+                              src={player.headshot}
+                              alt={player.name}
+                              className="w-8 h-8 rounded-full object-cover border border-[#2f3336] flex-shrink-0"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white text-sm font-medium truncate group-hover:text-[#1d9bf0] transition-colors">
+                              {player.name}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-xl font-bold text-yellow-400">
+                            {player.stats.steals || 0}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Blocks Card */}
+              {topPerformerObjects.team1.blocks && topPerformerObjects.team1.blocks.length > 0 && (
+                <div className="bg-[#181818]/50 rounded-xl border border-[#2f3336]/30 p-4">
+                  <h4 className="text-sm font-semibold text-[#71767a] mb-3 flex items-center gap-2">
+                    盖帽
+                  </h4>
+                  <div className="space-y-2">
+                    {topPerformerObjects.team1.blocks.map((player) => (
+                      <Link
+                        key={getPlayerId(player)}
+                        to={player.athleteId ? `/players/${player.athleteId}` : '#'}
+                        className="flex items-center justify-between p-2 bg-gradient-to-r from-indigo-900/20 to-indigo-800/10 rounded-lg border border-indigo-800/20 hover:border-indigo-700/40 hover:bg-indigo-900/30 transition-all group"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {player.headshot && (
+                            <img
+                              src={player.headshot}
+                              alt={player.name}
+                              className="w-8 h-8 rounded-full object-cover border border-[#2f3336] flex-shrink-0"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white text-sm font-medium truncate group-hover:text-[#1d9bf0] transition-colors">
+                              {player.name}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-xl font-bold text-indigo-400">
+                            {player.stats.blocks || 0}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Team 2 Column */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                {game.boxscore.teams[1]?.teamLogo && (
+                  <img
+                    src={game.boxscore.teams[1].teamLogo}
+                    alt={game.boxscore.teams[1].teamName}
+                    className="w-6 h-6 object-contain"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                )}
+                {game.boxscore.teams[1]?.teamName || 'Team 2'}
+              </h3>
+
+              {/* Points Card */}
+              {topPerformerObjects.team2.points && topPerformerObjects.team2.points.length > 0 && (
+                <div className="bg-[#181818]/50 rounded-xl border border-[#2f3336]/30 p-4">
+                  <h4 className="text-sm font-semibold text-[#71767a] mb-3 flex items-center gap-2">
+                    得分
+                  </h4>
+                  <div className="space-y-2">
+                    {topPerformerObjects.team2.points.map((player) => (
+                      <Link
+                        key={getPlayerId(player)}
+                        to={player.athleteId ? `/players/${player.athleteId}` : '#'}
+                        className="flex items-center justify-between p-2 bg-gradient-to-r from-red-900/20 to-red-800/10 rounded-lg border border-red-800/20 hover:border-red-700/40 hover:bg-red-900/30 transition-all group"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {player.headshot && (
+                            <img
+                              src={player.headshot}
+                              alt={player.name}
+                              className="w-8 h-8 rounded-full object-cover border border-[#2f3336] flex-shrink-0"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white text-sm font-medium truncate group-hover:text-[#1d9bf0] transition-colors">
+                              {player.name}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-xl font-bold text-red-400">
+                            {player.stats.points || 0}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Rebounds Card */}
+              {topPerformerObjects.team2.rebounds && topPerformerObjects.team2.rebounds.length > 0 && (
+                <div className="bg-[#181818]/50 rounded-xl border border-[#2f3336]/30 p-4">
+                  <h4 className="text-sm font-semibold text-[#71767a] mb-3 flex items-center gap-2">
+                    篮板
+                  </h4>
+                  <div className="space-y-2">
+                    {topPerformerObjects.team2.rebounds.map((player) => (
+                      <Link
+                        key={getPlayerId(player)}
+                        to={player.athleteId ? `/players/${player.athleteId}` : '#'}
+                        className="flex items-center justify-between p-2 bg-gradient-to-r from-green-900/20 to-green-800/10 rounded-lg border border-green-800/20 hover:border-green-700/40 hover:bg-green-900/30 transition-all group"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {player.headshot && (
+                            <img
+                              src={player.headshot}
+                              alt={player.name}
+                              className="w-8 h-8 rounded-full object-cover border border-[#2f3336] flex-shrink-0"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white text-sm font-medium truncate group-hover:text-[#1d9bf0] transition-colors">
+                              {player.name}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-xl font-bold text-green-400">
+                            {player.stats.rebounds || 0}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Assists Card */}
+              {topPerformerObjects.team2.assists && topPerformerObjects.team2.assists.length > 0 && (
+                <div className="bg-[#181818]/50 rounded-xl border border-[#2f3336]/30 p-4">
+                  <h4 className="text-sm font-semibold text-[#71767a] mb-3 flex items-center gap-2">
+                    助攻
+                  </h4>
+                  <div className="space-y-2">
+                    {topPerformerObjects.team2.assists.map((player) => (
+                      <Link
+                        key={getPlayerId(player)}
+                        to={player.athleteId ? `/players/${player.athleteId}` : '#'}
+                        className="flex items-center justify-between p-2 bg-gradient-to-r from-blue-900/20 to-blue-800/10 rounded-lg border border-blue-800/20 hover:border-blue-700/40 hover:bg-blue-900/30 transition-all group"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {player.headshot && (
+                            <img
+                              src={player.headshot}
+                              alt={player.name}
+                              className="w-8 h-8 rounded-full object-cover border border-[#2f3336] flex-shrink-0"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white text-sm font-medium truncate group-hover:text-[#1d9bf0] transition-colors">
+                              {player.name}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-xl font-bold text-blue-400">
+                            {player.stats.assists || 0}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Plus/Minus Card */}
+              {topPerformerObjects.team2.plusMinus && topPerformerObjects.team2.plusMinus.length > 0 && (
+                <div className="bg-[#181818]/50 rounded-xl border border-[#2f3336]/30 p-4">
+                  <h4 className="text-sm font-semibold text-[#71767a] mb-3 flex items-center gap-2">
+                    +/-
+                  </h4>
+                  <div className="space-y-2">
+                    {topPerformerObjects.team2.plusMinus.map((player) => (
+                      <Link
+                        key={getPlayerId(player)}
+                        to={player.athleteId ? `/players/${player.athleteId}` : '#'}
+                        className="flex items-center justify-between p-2 bg-gradient-to-r from-purple-900/20 to-purple-800/10 rounded-lg border border-purple-800/20 hover:border-purple-700/40 hover:bg-purple-900/30 transition-all group"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {player.headshot && (
+                            <img
+                              src={player.headshot}
+                              alt={player.name}
+                              className="w-8 h-8 rounded-full object-cover border border-[#2f3336] flex-shrink-0"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white text-sm font-medium truncate group-hover:text-[#1d9bf0] transition-colors">
+                              {player.name}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className={`text-xl font-bold ${
+                            (player.stats.plusMinus || 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                          }`}>
+                            {(player.stats.plusMinus || 0) >= 0 ? '+' : ''}{player.stats.plusMinus || 0}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Steals Card */}
+              {topPerformerObjects.team2.steals && topPerformerObjects.team2.steals.length > 0 && (
+                <div className="bg-[#181818]/50 rounded-xl border border-[#2f3336]/30 p-4">
+                  <h4 className="text-sm font-semibold text-[#71767a] mb-3 flex items-center gap-2">
+                    抢断
+                  </h4>
+                  <div className="space-y-2">
+                    {topPerformerObjects.team2.steals.map((player) => (
+                      <Link
+                        key={getPlayerId(player)}
+                        to={player.athleteId ? `/players/${player.athleteId}` : '#'}
+                        className="flex items-center justify-between p-2 bg-gradient-to-r from-yellow-900/20 to-yellow-800/10 rounded-lg border border-yellow-800/20 hover:border-yellow-700/40 hover:bg-yellow-900/30 transition-all group"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {player.headshot && (
+                            <img
+                              src={player.headshot}
+                              alt={player.name}
+                              className="w-8 h-8 rounded-full object-cover border border-[#2f3336] flex-shrink-0"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white text-sm font-medium truncate group-hover:text-[#1d9bf0] transition-colors">
+                              {player.name}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-xl font-bold text-yellow-400">
+                            {player.stats.steals || 0}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Blocks Card */}
+              {topPerformerObjects.team2.blocks && topPerformerObjects.team2.blocks.length > 0 && (
+                <div className="bg-[#181818]/50 rounded-xl border border-[#2f3336]/30 p-4">
+                  <h4 className="text-sm font-semibold text-[#71767a] mb-3 flex items-center gap-2">
+                    盖帽
+                  </h4>
+                  <div className="space-y-2">
+                    {topPerformerObjects.team2.blocks.map((player) => (
+                      <Link
+                        key={getPlayerId(player)}
+                        to={player.athleteId ? `/players/${player.athleteId}` : '#'}
+                        className="flex items-center justify-between p-2 bg-gradient-to-r from-indigo-900/20 to-indigo-800/10 rounded-lg border border-indigo-800/20 hover:border-indigo-700/40 hover:bg-indigo-900/30 transition-all group"
+                      >
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {player.headshot && (
+                            <img
+                              src={player.headshot}
+                              alt={player.name}
+                              className="w-8 h-8 rounded-full object-cover border border-[#2f3336] flex-shrink-0"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white text-sm font-medium truncate group-hover:text-[#1d9bf0] transition-colors">
+                              {player.name}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-xl font-bold text-indigo-400">
+                            {player.stats.blocks || 0}
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </motion.div>
       )}
 
       {/* Boxscore */}

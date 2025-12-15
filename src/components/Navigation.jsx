@@ -17,9 +17,19 @@ function Navigation() {
             </Link>
             <div className="flex space-x-1">
               <Link
+                to="/"
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  location.pathname === '/'
+                    ? 'bg-[#16181c] text-white'
+                    : 'text-[#71767a] hover:text-white hover:bg-[#181818]'
+                }`}
+              >
+                首页
+              </Link>
+              <Link
                 to="/games"
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  isActive('/games') || location.pathname === '/'
+                  isActive('/games')
                     ? 'bg-[#16181c] text-white'
                     : 'text-[#71767a] hover:text-white hover:bg-[#181818]'
                 }`}
