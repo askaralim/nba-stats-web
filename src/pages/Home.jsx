@@ -706,7 +706,7 @@ function Home() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <span>📰</span>
-              最新新闻
+              New!
             </h2>
             <Link
               to="/news"
@@ -777,7 +777,7 @@ function Home() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <span>🔮</span>
-              即将开始
+              Next Games!
             </h2>
             <Link
               to="/games"

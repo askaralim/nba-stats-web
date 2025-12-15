@@ -10,6 +10,7 @@ function PlayerDetails() {
   const [bioData, setBioData] = useState(null);
   const [statsData, setStatsData] = useState(null);
   const [advancedStatsData, setAdvancedStatsData] = useState(null);
+  const [gameLogData, setGameLogData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -19,17 +20,19 @@ function PlayerDetails() {
         setError(null);
         setLoading(true);
         
-        const [info, bio, stats, advancedStats] = await Promise.all([
+        const [info, bio, stats, advancedStats, gameLog] = await Promise.all([
           fetch(`${API_BASE_URL}/api/nba/players/${playerId}`).then(r => r.ok ? r.json() : null),
           fetch(`${API_BASE_URL}/api/nba/players/${playerId}/bio`).then(r => r.ok ? r.json() : null),
           fetch(`${API_BASE_URL}/api/nba/players/${playerId}/stats`).then(r => r.ok ? r.json() : null),
-          fetch(`${API_BASE_URL}/api/nba/players/${playerId}/stats/advanced`).then(r => r.ok ? r.json() : null)
+          fetch(`${API_BASE_URL}/api/nba/players/${playerId}/stats/advanced`).then(r => r.ok ? r.json() : null),
+          fetch(`${API_BASE_URL}/api/nba/players/${playerId}/gamelog`).then(r => r.ok ? r.json() : null)
         ]);
 
         setPlayerInfo(info);
         setBioData(bio);
         setStatsData(stats);
         setAdvancedStatsData(advancedStats);
+        setGameLogData(gameLog);
       } catch (err) {
         setError(err.message);
         console.error('Error fetching player details:', err);
@@ -113,6 +116,58 @@ function PlayerDetails() {
     };
   };
 
+  // Get last 5 games from game log
+  const getLast5Games = () => {
+    if (!gameLogData?.seasonTypes) return null;
+    
+    // Find the current regular season
+    const regularSeason = gameLogData.seasonTypes.find(st => 
+      st.displayName && st.displayName.includes('Regular Season')
+    );
+    
+    if (!regularSeason?.categories) return null;
+    
+    // Get all events from all categories (months)
+    const allEvents = [];
+    regularSeason.categories.forEach(category => {
+      if (category.events && Array.isArray(category.events)) {
+        category.events.forEach(event => {
+          // Get full event details from events map
+          const eventDetails = gameLogData.events?.[event.eventId] || {};
+          allEvents.push({
+            eventId: event.eventId,
+            stats: event.stats || [],
+            gameDate: eventDetails.gameDate || event.gameDate,
+            score: eventDetails.score,
+            gameResult: eventDetails.gameResult,
+            opponent: eventDetails.opponent,
+            atVs: eventDetails.atVs,
+            homeTeamId: eventDetails.homeTeamId,
+            awayTeamId: eventDetails.awayTeamId,
+            homeTeamScore: eventDetails.homeTeamScore,
+            awayTeamScore: eventDetails.awayTeamScore
+          });
+        });
+      }
+    });
+    
+    // Sort by date (most recent first) and take last 5
+    const sortedEvents = allEvents.sort((a, b) => {
+      const dateA = a.gameDate ? new Date(a.gameDate) : new Date(0);
+      const dateB = b.gameDate ? new Date(b.gameDate) : new Date(0);
+      return dateB - dateA;
+    }).slice(0, 5);
+    
+    if (sortedEvents.length === 0) return null;
+    
+    return {
+      labels: gameLogData.labels || [],
+      names: gameLogData.names || [],
+      displayNames: gameLogData.displayNames || [],
+      events: sortedEvents
+    };
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -144,6 +199,7 @@ function PlayerDetails() {
   const currentSeasonStats = getCurrentSeasonStats();
   const regularSeasonStats = getRegularSeasonStats();
   const advancedStats = getAdvancedStats();
+  const last5Games = getLast5Games();
 
   return (
     <div>
@@ -160,7 +216,7 @@ function PlayerDetails() {
         </Link>
       </div>
 
-      {/* Player Header Section */}
+      {/* Player Header & Biography Section (Combined) */}
       {playerBasicInfo && (
         <motion.div
           className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6 mb-6"
@@ -168,7 +224,7 @@ function PlayerDetails() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6 mb-6">
             {/* Player Photo */}
             <div className="w-32 h-32 rounded-full bg-[#181818] flex items-center justify-center border-2 border-[#2f3336] overflow-hidden">
               {playerBasicInfo.headshot?.href ? (
@@ -193,7 +249,7 @@ function PlayerDetails() {
                 {playerBasicInfo.displayName || `球员 #${playerId}`}
               </h1>
               {teamInfo && (
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-3 mb-4">
                   {teamInfo.logos?.[0]?.href && (
                     <img
                       src={teamInfo.logos[0].href}
@@ -219,6 +275,55 @@ function PlayerDetails() {
                   )}
                 </div>
               )}
+              
+              {/* Biography Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                {playerBasicInfo.displayHeight && playerBasicInfo.displayWeight && (
+                  <div className="flex justify-between">
+                    <span className="text-[#71767a]">身高/体重:</span>
+                    <span className="text-white">{playerBasicInfo.displayHeight}, {playerBasicInfo.displayWeight}</span>
+                  </div>
+                )}
+                {playerBasicInfo.displayDOB && (
+                  <div className="flex justify-between">
+                    <span className="text-[#71767a]">出生日期:</span>
+                    <span className="text-white">{playerBasicInfo.displayDOB} {playerBasicInfo.age ? `(${playerBasicInfo.age}岁)` : ''}</span>
+                  </div>
+                )}
+                {playerBasicInfo.college?.name && (
+                  <div className="flex justify-between">
+                    <span className="text-[#71767a]">大学:</span>
+                    <span className="text-white">{playerBasicInfo.college.name}</span>
+                  </div>
+                )}
+                {playerBasicInfo.displayDraft && (
+                  <div className="flex justify-between">
+                    <span className="text-[#71767a]">选秀信息:</span>
+                    <span className="text-white">{playerBasicInfo.displayDraft}</span>
+                  </div>
+                )}
+                {playerBasicInfo.active !== undefined && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#71767a]">状态:</span>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${playerBasicInfo.active ? 'bg-green-500' : 'bg-gray-500'}`}></div>
+                      <span className="text-white">{playerBasicInfo.active ? '活跃' : '非活跃'}</span>
+                    </div>
+                  </div>
+                )}
+                {teamInfo && (
+                  <div className="flex justify-between">
+                    <span className="text-[#71767a]">球队:</span>
+                    <span className="text-white">{teamInfo.displayName}</span>
+                  </div>
+                )}
+                {playerBasicInfo.displayExperience && (
+                  <div className="flex justify-between">
+                    <span className="text-[#71767a]">经验:</span>
+                    <span className="text-white">{playerBasicInfo.displayExperience}</span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Current Season Stats Card */}
@@ -250,61 +355,81 @@ function PlayerDetails() {
         </motion.div>
       )}
 
-      {/* Biography Section */}
-      {playerBasicInfo && (
+      {/* Last 5 Games Stats Section */}
+      {last5Games && last5Games.events && last5Games.events.length > 0 && (
         <motion.div
           className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6 mb-6"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
-          <h2 className="text-xl font-bold text-white mb-4">个人资料</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {playerBasicInfo.displayHeight && playerBasicInfo.displayWeight && (
-              <div className="flex justify-between">
-                <span className="text-[#71767a]">HT/WT:</span>
-                <span className="text-white">{playerBasicInfo.displayHeight}, {playerBasicInfo.displayWeight}</span>
-              </div>
-            )}
-            {playerBasicInfo.displayDOB && (
-              <div className="flex justify-between">
-                <span className="text-[#71767a]">BIRTHDATE:</span>
-                <span className="text-white">{playerBasicInfo.displayDOB} {playerBasicInfo.age ? `(${playerBasicInfo.age})` : ''}</span>
-              </div>
-            )}
-            {playerBasicInfo.college?.name && (
-              <div className="flex justify-between">
-                <span className="text-[#71767a]">COLLEGE:</span>
-                <span className="text-white">{playerBasicInfo.college.name}</span>
-              </div>
-            )}
-            {playerBasicInfo.displayDraft && (
-              <div className="flex justify-between">
-                <span className="text-[#71767a]">DRAFT INFO:</span>
-                <span className="text-white">{playerBasicInfo.displayDraft}</span>
-              </div>
-            )}
-            {playerBasicInfo.active !== undefined && (
-              <div className="flex justify-between items-center">
-                <span className="text-[#71767a]">STATUS:</span>
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${playerBasicInfo.active ? 'bg-green-500' : 'bg-gray-500'}`}></div>
-                  <span className="text-white">{playerBasicInfo.active ? 'Active' : 'Inactive'}</span>
-                </div>
-              </div>
-            )}
-            {teamInfo && (
-              <div className="flex justify-between">
-                <span className="text-[#71767a]">TEAM:</span>
-                <span className="text-white">{teamInfo.displayName}</span>
-              </div>
-            )}
-            {playerBasicInfo.displayExperience && (
-              <div className="flex justify-between">
-                <span className="text-[#71767a]">EXPERIENCE:</span>
-                <span className="text-white">{playerBasicInfo.displayExperience}</span>
-              </div>
-            )}
+          <h2 className="text-xl font-bold text-white mb-4">最近5场比赛</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#2f3336]/30">
+                  <th className="text-left py-3 px-3 font-medium text-white sticky left-0 z-10 bg-[#16181c]">日期</th>
+                  <th className="text-left py-3 px-3 font-medium text-white">比分</th>
+                  {last5Games.labels.map((label, idx) => (
+                    <th key={idx} className="text-center py-3 px-3 font-medium text-white">
+                      {label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {last5Games.events.map((event, index) => {
+                  const gameDate = event.gameDate ? new Date(event.gameDate) : null;
+                  const formattedDate = gameDate ? gameDate.toLocaleDateString('zh-CN', { 
+                    month: '2-digit', 
+                    day: '2-digit' 
+                  }) : '-';
+                  
+                  // Get score and result
+                  const score = event.score || '-';
+                  const gameResult = event.gameResult === 'W' ? '胜' : event.gameResult === 'L' ? '负' : '';
+                  const opponent = event.opponent?.displayName || event.opponent?.abbreviation || '';
+                  const atVs = event.atVs === '@' ? '@' : 'vs';
+                  
+                  return (
+                    <motion.tr
+                      key={event.eventId || index}
+                      className={`border-b border-[#2f3336]/20 transition-all duration-200 hover:bg-[#181818]/50 ${
+                        index % 2 === 0 ? 'bg-[#16181c]/30' : 'bg-[#16181c]/10'
+                      }`}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.2, delay: 0.15 + index * 0.03 }}
+                    >
+                      <td className="py-3 px-3 sticky left-0 z-10 bg-inherit text-white/90">
+                        {formattedDate}
+                      </td>
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-2">
+                          <Link
+                            to={`/games/${event.eventId}`}
+                            className="text-[#1d9bf0] hover:text-[#1a8cd8] hover:underline transition-colors"
+                          >
+                            <span className={gameResult === '胜' ? 'text-green-400' : gameResult === '负' ? 'text-red-400' : 'text-white'}>
+                              {gameResult}
+                            </span>
+                            {' '}
+                            <span className="text-white">{atVs} {opponent}</span>
+                            {' '}
+                            <span className="text-white/70">{score}</span>
+                          </Link>
+                        </div>
+                      </td>
+                      {event.stats && event.stats.map((stat, idx) => (
+                        <td key={idx} className="text-center py-3 px-3 text-white/90">
+                          {stat || '-'}
+                        </td>
+                      ))}
+                    </motion.tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </motion.div>
       )}

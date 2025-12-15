@@ -262,17 +262,17 @@ function TeamDetails() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#2f3336]/30">
-                  <th className="text-center py-3 px-3 font-medium text-white">GP</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">PTS</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">REB</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">AST</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">STL</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">BLK</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">TO</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">PF</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">FG%</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">3P%</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">FT%</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">场次</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">得分</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">篮板</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">助攻</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">抢断</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">盖帽</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">失误</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">犯规</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">命中率</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">三分%</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">罚球%</th>
                   <th className="text-center py-3 px-3 font-medium text-white">AST/TO</th>
                 </tr>
               </thead>
@@ -315,19 +315,19 @@ function TeamDetails() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-[#2f3336]/30">
-                  <th className="text-left py-3 px-3 font-medium text-white sticky left-0 z-10 bg-[#16181c]">NAME</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">GP</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">GS</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">MIN</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">PTS</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">OR</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">DR</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">REB</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">AST</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">STL</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">BLK</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">TO</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">PF</th>
+                  <th className="text-left py-3 px-3 font-medium text-white sticky left-0 z-10 bg-[#16181c]">球员</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">场次</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">先发</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">时间</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">得分</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">进攻篮板</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">防守篮板</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">篮板</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">助攻</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">抢断</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">盖帽</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">失误</th>
+                  <th className="text-center py-3 px-3 font-medium text-white">犯规</th>
                   <th className="text-center py-3 px-3 font-medium text-white">AST/TO</th>
                 </tr>
               </thead>
