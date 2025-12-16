@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { API_BASE_URL } from '../config';
 
 function PlayerStats() {
-  const [players, setPlayers] = useState([]);
+  const [topPlayersByStat, setTopPlayersByStat] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [metadata, setMetadata] = useState(null);
@@ -29,7 +29,7 @@ function PlayerStats() {
         throw new Error('加载球员数据失败');
       }
       const data = await response.json();
-      setPlayers(data.players || []);
+      setTopPlayersByStat(data.topPlayersByStat || {});
       setMetadata(data.metadata || {});
     } catch (err) {
       setError(err.message);
@@ -50,62 +50,38 @@ function PlayerStats() {
     }));
   };
 
-  const getStatValue = (player, statName) => {
-    return player.stats?.[statName]?.value ?? player.stats?.[statName]?.total ?? '-';
-  };
-
-  const getStatRank = (player, statName) => {
-    const rank = player.stats?.[statName]?.rank;
-    return rank && rank !== '-' ? parseInt(rank) : null;
-  };
-
-  // Sort players by a specific stat and return top N
-  const getTopPlayersByStat = (statName, count = 10) => {
-    return [...players]
-      .filter(player => {
-        const value = getStatValue(player, statName);
-        return value !== '-' && value !== null && !isNaN(parseFloat(value));
-      })
-      .sort((a, b) => {
-        const valA = parseFloat(getStatValue(a, statName));
-        const valB = parseFloat(getStatValue(b, statName));
-        return valB - valA;
-      })
-      .slice(0, count);
-  };
-
-  // Stat sections configuration
+  // Stat sections configuration (matching backend stat names)
   const statSections = [
     {
-      title: '场均得分',
+      title: '得分',
       statName: 'avgPoints',
       icon: '🏀',
       color: 'from-red-500 to-pink-500',
       description: 'Points Per Game'
     },
     {
-      title: '场均助攻',
+      title: '助攻',
       statName: 'avgAssists',
       icon: '🎯',
       color: 'from-blue-500 to-cyan-500',
       description: 'Assists Per Game'
     },
     {
-      title: '场均篮板',
+      title: '篮板',
       statName: 'avgRebounds',
       icon: '📊',
       color: 'from-green-500 to-emerald-500',
       description: 'Rebounds Per Game'
     },
     {
-      title: '场均抢断',
+      title: '抢断',
       statName: 'avgSteals',
       icon: '⚡',
       color: 'from-yellow-500 to-orange-500',
       description: 'Steals Per Game'
     },
     {
-      title: '场均盖帽',
+      title: '盖帽',
       statName: 'avgBlocks',
       icon: '🛡️',
       color: 'from-purple-500 to-indigo-500',
@@ -126,40 +102,32 @@ function PlayerStats() {
       description: 'Triple Double'
     },
     {
-      title: '场均三分命中',
+      title: '三分命中',
       statName: 'avgThreePointFieldGoalsMade',
       icon: '🎪',
       color: 'from-teal-500 to-cyan-500',
       description: 'Average 3-Point Field Goals Made'
     },
     {
-      title: '投篮命中率',
+      title: '投篮%',
       statName: 'fieldGoalPct',
       icon: '🎨',
       color: 'from-violet-500 to-purple-500',
-      description: 'Field Goal Percentage',
-      format: (val) => `${parseFloat(val).toFixed(1)}%`
+      description: 'Field Goal Percentage'
     },
     {
-      title: '三分命中率',
+      title: '三分%',
       statName: 'threePointFieldGoalPct',
       icon: '🌈',
       color: 'from-sky-500 to-blue-500',
-      description: '3-Point Field Goal Percentage',
-      format: (val) => `${parseFloat(val).toFixed(1)}%`
+      description: '3-Point Field Goal Percentage'
     }
   ];
 
-  const StatSection = ({ section, topPlayers }) => {
-    if (topPlayers.length === 0) return null;
+  const StatSection = ({ section, categoryData }) => {
+    if (!categoryData || !categoryData.players || categoryData.players.length === 0) return null;
 
-    const formatValue = (val) => {
-      if (section.format) {
-        return section.format(val);
-      }
-      const numVal = parseFloat(val);
-      return isNaN(numVal) ? val : numVal.toFixed(1);
-    };
+    const { players } = categoryData;
 
     return (
       <div className="mb-8">
@@ -177,9 +145,11 @@ function PlayerStats() {
         
         <div className="bg-[#16181c] border border-[#2f3336] rounded-b-lg overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-            {topPlayers.map((player, index) => {
-              const statValue = getStatValue(player, section.statName);
-              const rank = getStatRank(player, section.statName) ?? index + 1;
+            {players.map((player) => {
+              const stat = player.stats?.[section.statName];
+              const statValue = stat?.displayValue || '-';
+              const rank = player.statRank ?? stat?.rank ?? 1;
+              const gamesPlayed = player.stats?.gamesPlayed?.displayValue || player.stats?.gamesPlayed?.value || '-';
               
               return (
                 <div
@@ -251,13 +221,13 @@ function PlayerStats() {
                   
                   <div className="flex items-baseline justify-between pt-3 border-t border-[#2f3336]">
                     <div className="text-xs text-[#71767a]">
-                      场次: {getStatValue(player, 'gamesPlayed')}
+                      场次: {gamesPlayed}
                     </div>
                     <div className="text-right">
                       <div className={`text-2xl font-bold ${
                         rank === 1 ? 'text-yellow-600' : 'text-white'
                       }`}>
-                        {formatValue(statValue)}
+                        {statValue}
                       </div>
                       {rank === 1 && (
                         <div className="text-xs text-yellow-600 font-semibold mt-1">
@@ -275,7 +245,7 @@ function PlayerStats() {
     );
   };
 
-  if (loading && players.length === 0) {
+  if (loading && Object.keys(topPlayersByStat).length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
@@ -286,7 +256,7 @@ function PlayerStats() {
     );
   }
 
-  if (error && players.length === 0) {
+  if (error && Object.keys(topPlayersByStat).length === 0) {
     return (
       <div className="bg-[#16181c] border border-[#2f3336] rounded-xl p-6 text-center">
         <p className="text-white font-semibold mb-2">加载球员数据失败</p>
@@ -349,19 +319,19 @@ function PlayerStats() {
         )}
       </div>
 
-      {players.length === 0 ? (
+      {Object.keys(topPlayersByStat).length === 0 ? (
         <div className="bg-[#16181c] rounded-xl border border-[#2f3336] p-12 text-center">
           <p className="text-[#71767a] text-lg">未找到球员数据</p>
         </div>
       ) : (
         <div>
           {statSections.map((section) => {
-            const topPlayers = getTopPlayersByStat(section.statName, 9);
+            const categoryData = topPlayersByStat[section.statName];
             return (
               <StatSection
                 key={section.statName}
                 section={section}
-                topPlayers={topPlayers}
+                categoryData={categoryData}
               />
             );
           })}

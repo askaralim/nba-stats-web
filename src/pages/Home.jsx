@@ -46,7 +46,8 @@ const LoadingSpinner = ({ size = 'small' }) => (
 );
 
 function Home() {
-  const [todayGames, setTodayGames] = useState([]);
+  const [featuredGames, setFeaturedGames] = useState([]);
+  const [otherGames, setOtherGames] = useState([]);
   const [upcomingGames, setUpcomingGames] = useState([]);
   const [topPerformers, setTopPerformers] = useState([]);
   const [leagueLeaders, setLeagueLeaders] = useState({});
@@ -68,89 +69,41 @@ function Home() {
     const tomorrowParam = formatDateForAPI(tomorrow);
 
     // Fetch all data independently in parallel - each updates its own state when ready
-    // 1. Today's Games (highest priority - shown first)
-    fetch(`${API_BASE_URL}/api/nba/games/today?date=${todayParam}`)
+    // 1. Today's Games with featured games (highest priority - shown first)
+    fetch(`${API_BASE_URL}/api/nba/games/today?date=${todayParam}&featured=true`)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
-        const games = data?.games || [];
-        setTodayGames(games);
+        setFeaturedGames(data?.featured || []);
+        setOtherGames(data?.other || []);
         setLoadingStates(prev => ({ ...prev, todayGames: false }));
-        
-        // After today's games load, fetch game details for completed games (for today's top performers)
-        const completedGames = games.filter(game => game.gameStatus === 3);
-        if (completedGames.length > 0) {
-          Promise.all(
-            completedGames.map(game =>
-              fetch(`${API_BASE_URL}/api/nba/games/${game.gameId}`)
-                .then(res => res.ok ? res.json() : null)
-                .catch(() => null)
-            )
-          ).then(gameDetailsResults => {
-            const allPlayers = [];
-            gameDetailsResults.forEach((gameDetail) => {
-              if (!gameDetail?.boxscore?.teams) return;
-              
-              gameDetail.boxscore.teams.forEach(team => {
-                if (team.starters && Array.isArray(team.starters)) {
-                  team.starters.forEach(player => {
-                    if (player.stats && player.athleteId) {
-                      allPlayers.push({
-                        id: player.athleteId,
-                        name: player.name,
-                        team: team.teamName,
-                        teamAbbreviation: team.teamAbbreviation,
-                        headshot: player.headshot,
-                        points: parseInt(player.stats.points) || 0,
-                        rebounds: parseInt(player.stats.rebounds) || 0,
-                        assists: parseInt(player.stats.assists) || 0
-                      });
-                    }
-                  });
-                }
-                
-                if (team.bench && Array.isArray(team.bench)) {
-                  team.bench.forEach(player => {
-                    if (player.stats && player.athleteId) {
-                      allPlayers.push({
-                        id: player.athleteId,
-                        name: player.name,
-                        team: team.teamName,
-                        teamAbbreviation: team.teamAbbreviation,
-                        headshot: player.headshot,
-                        points: parseInt(player.stats.points) || 0,
-                        rebounds: parseInt(player.stats.rebounds) || 0,
-                        assists: parseInt(player.stats.assists) || 0
-                      });
-                    }
-                  });
-                }
-              });
-            });
-
-            const todayTopPoints = allPlayers.sort((a, b) => b.points - a.points).slice(0, 3);
-            const todayTopRebounds = allPlayers.sort((a, b) => b.rebounds - a.rebounds).slice(0, 3);
-            const todayTopAssists = allPlayers.sort((a, b) => b.assists - a.assists).slice(0, 3);
-
-            setLeagueLeaders({
-              points: todayTopPoints,
-              rebounds: todayTopRebounds,
-              assists: todayTopAssists
-            });
-            setLoadingStates(prev => ({ ...prev, leagueLeaders: false }));
-          }).catch(() => {
-            setLeagueLeaders({ points: [], rebounds: [], assists: [] });
-            setLoadingStates(prev => ({ ...prev, leagueLeaders: false }));
-          });
-        } else {
-          setLeagueLeaders({ points: [], rebounds: [], assists: [] });
-          setLoadingStates(prev => ({ ...prev, leagueLeaders: false }));
-        }
       })
       .catch(() => {
         setLoadingStates(prev => ({ ...prev, todayGames: false }));
       });
 
-    // 2. Upcoming Games (tomorrow)
+    // 2. Home page data (today's top performers + season leaders)
+    fetch(`${API_BASE_URL}/api/nba/home?date=${todayParam}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        // Set today's top performers
+        setLeagueLeaders(data?.todayTopPerformers || { points: [], rebounds: [], assists: [] });
+        setLoadingStates(prev => ({ ...prev, leagueLeaders: false }));
+        
+        // Set season leaders
+        setTopPerformers(data?.seasonLeaders || { points: [], rebounds: [], assists: [] });
+        setLoadingStates(prev => ({ ...prev, topPerformers: false }));
+      })
+      .catch(() => {
+        setLeagueLeaders({ points: [], rebounds: [], assists: [] });
+        setTopPerformers({ points: [], rebounds: [], assists: [] });
+        setLoadingStates(prev => ({ 
+          ...prev, 
+          leagueLeaders: false, 
+          topPerformers: false 
+        }));
+      });
+
+    // 3. Upcoming Games (tomorrow)
     fetch(`${API_BASE_URL}/api/nba/games/today?date=${tomorrowParam}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
@@ -159,38 +112,6 @@ function Home() {
       })
       .catch(() => {
         setLoadingStates(prev => ({ ...prev, upcomingGames: false }));
-      });
-
-    // 3. Top Performers (season leaders)
-    fetch(`${API_BASE_URL}/api/nba/stats/players?season=2026|2&limit=100&sort=offensive.avgPoints:desc`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        const players = data?.players || [];
-        
-        const topPoints = players
-          .filter(p => p.stats?.avgPoints?.value && !isNaN(parseFloat(p.stats.avgPoints.value)))
-          .sort((a, b) => parseFloat(b.stats.avgPoints.value) - parseFloat(a.stats.avgPoints.value))
-          .slice(0, 3);
-        
-        const topAssists = players
-          .filter(p => p.stats?.avgAssists?.value && !isNaN(parseFloat(p.stats.avgAssists.value)))
-          .sort((a, b) => parseFloat(b.stats.avgAssists.value) - parseFloat(a.stats.avgAssists.value))
-          .slice(0, 3);
-        
-        const topRebounds = players
-          .filter(p => p.stats?.avgRebounds?.value && !isNaN(parseFloat(p.stats.avgRebounds.value)))
-          .sort((a, b) => parseFloat(b.stats.avgRebounds.value) - parseFloat(a.stats.avgRebounds.value))
-          .slice(0, 3);
-
-        setTopPerformers({
-          points: topPoints,
-          assists: topAssists,
-          rebounds: topRebounds
-        });
-        setLoadingStates(prev => ({ ...prev, topPerformers: false }));
-      })
-      .catch(() => {
-        setLoadingStates(prev => ({ ...prev, topPerformers: false }));
       });
 
     // 4. News (can be slower, loads independently)
@@ -217,14 +138,14 @@ function Home() {
         <p className="text-[#71767a] text-lg">NBA 数据与新闻一站式平台</p>
       </motion.div> */}
 
-      {/* Today's Games Widget - Compact Version */}
+      {/* Today's Games Widget - Featured Games */}
       <motion.div
         className="bg-[#16181c]/80 backdrop-blur-xl rounded-2xl border border-[#2f3336]/50 p-5 shadow-lg shadow-black/20"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-white flex items-center gap-2">
             <span>🏀</span>
             今日比赛
@@ -239,101 +160,235 @@ function Home() {
             </svg>
           </Link>
         </div>
-        {todayGames.length === 0 ? (
+
+        {loadingStates.todayGames ? (
+          <LoadingSpinner />
+        ) : featuredGames.length === 0 && otherGames.length === 0 ? (
           <div className="text-center py-4">
             <p className="text-[#71767a] text-sm">今日暂无比赛</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {todayGames.slice(0, 5).map((game) => {
-              const getStatusBadge = (status) => {
-                switch (status) {
-                  case 1:
-                    return <span className="text-xs text-[#71767a]">已安排</span>;
-                  case 2:
-                    return <span className="text-xs text-red-400 animate-pulse">● 直播中</span>;
-                  case 3:
-                    return <span className="text-xs text-green-400">已结束</span>;
-                  default:
-                    return <span className="text-xs text-[#71767a]">{game.gameStatusText || ''}</span>;
-                }
-              };
+          <div className="space-y-6">
+            {/* Today at a Glance - Featured Games */}
+            {featuredGames.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-[#71767a] mb-3 flex items-center gap-2">
+                  <span>⭐</span>
+                  Today at a Glance
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {featuredGames.map((game) => {
+                    const getStatusBadge = (status) => {
+                      switch (status) {
+                        case 1:
+                          return <span className="text-xs text-[#71767a]">已安排</span>;
+                        case 2:
+                          return <span className="text-xs text-red-400 animate-pulse">● 直播中</span>;
+                        case 3:
+                          return <span className="text-xs text-green-400">已结束</span>;
+                        default:
+                          return <span className="text-xs text-[#71767a]">{game.gameStatusText || ''}</span>;
+                      }
+                    };
 
-              return (
-                <Link
-                  key={game.gameId}
-                  to={`/games/${game.gameId}`}
-                  className="block p-3 bg-[#181818]/50 rounded-lg border border-[#2f3336]/30 hover:bg-[#181818] hover:border-[#2f3336] transition-all group"
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    {/* Away Team */}
-                    <div className="flex items-center gap-2 w-full">
-                      {game.awayTeam.logo && (
-                        <img
-                          src={game.awayTeam.logo}
-                          alt={game.awayTeam.teamName}
-                          className="w-8 h-8 object-contain flex-shrink-0"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                          }}
-                        />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <div className="text-white text-sm font-medium truncate group-hover:text-[#1d9bf0] transition-colors text-center">
-                          {game.awayTeam.teamCity} {game.awayTeam.teamName}
-                        </div>
-                      </div>
-                      {game.awayTeam.score !== null && (
-                        <div className="text-lg font-bold text-white flex-shrink-0">
-                          {game.awayTeam.score}
-                        </div>
-                      )}
-                    </div>
+                    const getFeaturedBadge = (reason) => {
+                      const badges = {
+                        'overtime': { text: 'OT', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
+                        'marquee': { text: 'Marquee', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
+                        'closest': { text: 'Best Game', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+                        'live': { text: 'Live', color: 'bg-red-500/20 text-red-400 border-red-500/30 animate-pulse' }
+                      };
+                      const badge = badges[reason] || badges['marquee'];
+                      return (
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${badge.color}`}>
+                          {badge.text}
+                        </span>
+                      );
+                    };
 
-                    {/* VS / Status */}
-                    <div className="flex flex-col items-center gap-1">
-                      {game.gameStatus === 1 && game.gameEt ? (
-                        <div className="text-xs text-[#71767a] text-center whitespace-nowrap">
-                          {new Date(game.gameEt).toLocaleTimeString('zh-CN', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            timeZone: 'Asia/Shanghai',
-                            hour12: false
-                          })}
-                        </div>
-                      ) : (
-                        <div className="text-[#71767a] text-xs">VS</div>
-                      )}
-                      {getStatusBadge(game.gameStatus)}
-                    </div>
+                    return (
+                      <Link
+                        key={game.gameId}
+                        to={`/games/${game.gameId}`}
+                        className="block p-4 bg-gradient-to-br from-[#181818]/80 to-[#16181c]/80 rounded-xl border-2 border-[#2f3336]/50 hover:border-[#1d9bf0]/50 hover:bg-[#181818] transition-all group relative overflow-hidden"
+                      >
+                        {/* Featured Badge */}
+                        {game.featuredReason && (
+                          <div className="absolute top-3 right-3 z-10">
+                            {getFeaturedBadge(game.featuredReason)}
+                          </div>
+                        )}
+                        
+                        <div className="flex flex-col items-center gap-3">
+                          {/* Away Team */}
+                          <div className="flex items-center gap-3 w-full">
+                            {game.awayTeam.logo && (
+                              <img
+                                src={game.awayTeam.logo}
+                                alt={game.awayTeam.teamName}
+                                className="w-10 h-10 object-contain flex-shrink-0"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <div className="text-white text-sm font-semibold truncate group-hover:text-[#1d9bf0] transition-colors">
+                                {game.awayTeam.teamCity} {game.awayTeam.teamName}
+                              </div>
+                            </div>
+                            {game.awayTeam.score !== null && (
+                              <div className="text-xl font-bold text-white flex-shrink-0">
+                                {game.awayTeam.score}
+                              </div>
+                            )}
+                          </div>
 
-                    {/* Home Team */}
-                    <div className="flex items-center gap-2 w-full">
-                      {game.homeTeam.logo && (
-                        <img
-                          src={game.homeTeam.logo}
-                          alt={game.homeTeam.teamName}
-                          className="w-8 h-8 object-contain flex-shrink-0"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                          }}
-                        />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <div className="text-white text-sm font-medium truncate group-hover:text-[#1d9bf0] transition-colors text-center">
-                          {game.homeTeam.teamCity} {game.homeTeam.teamName}
+                          {/* VS / Status */}
+                          <div className="flex flex-col items-center gap-1">
+                            {game.gameStatus === 1 && game.gameEt ? (
+                              <div className="text-xs text-[#71767a] text-center whitespace-nowrap">
+                                {new Date(game.gameEt).toLocaleTimeString('zh-CN', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  timeZone: 'Asia/Shanghai',
+                                  hour12: false
+                                })}
+                              </div>
+                            ) : (
+                              <div className="text-[#71767a] text-xs">VS</div>
+                            )}
+                            {getStatusBadge(game.gameStatus)}
+                          </div>
+
+                          {/* Home Team */}
+                          <div className="flex items-center gap-3 w-full">
+                            {game.homeTeam.logo && (
+                              <img
+                                src={game.homeTeam.logo}
+                                alt={game.homeTeam.teamName}
+                                className="w-10 h-10 object-contain flex-shrink-0"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <div className="text-white text-sm font-semibold truncate group-hover:text-[#1d9bf0] transition-colors">
+                                {game.homeTeam.teamCity} {game.homeTeam.teamName}
+                              </div>
+                            </div>
+                            {game.homeTeam.score !== null && (
+                              <div className="text-xl font-bold text-white flex-shrink-0">
+                                {game.homeTeam.score}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                      {game.homeTeam.score !== null && (
-                        <div className="text-lg font-bold text-white flex-shrink-0">
-                          {game.homeTeam.score}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Other Games */}
+            {otherGames.length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-[#71767a] mb-3">其他比赛</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                  {otherGames.map((game) => {
+                    const getStatusBadge = (status) => {
+                      switch (status) {
+                        case 1:
+                          return <span className="text-xs text-[#71767a]">已安排</span>;
+                        case 2:
+                          return <span className="text-xs text-red-400 animate-pulse">● 直播中</span>;
+                        case 3:
+                          return <span className="text-xs text-green-400">已结束</span>;
+                        default:
+                          return <span className="text-xs text-[#71767a]">{game.gameStatusText || ''}</span>;
+                      }
+                    };
+
+                    return (
+                      <Link
+                        key={game.gameId}
+                        to={`/games/${game.gameId}`}
+                        className="block p-3 bg-[#181818]/50 rounded-lg border border-[#2f3336]/30 hover:bg-[#181818] hover:border-[#2f3336] transition-all group"
+                      >
+                        <div className="flex flex-col items-center gap-2">
+                          {/* Away Team */}
+                          <div className="flex items-center gap-2 w-full">
+                            {game.awayTeam.logo && (
+                              <img
+                                src={game.awayTeam.logo}
+                                alt={game.awayTeam.teamName}
+                                className="w-8 h-8 object-contain flex-shrink-0"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <div className="text-white text-sm font-medium truncate group-hover:text-[#1d9bf0] transition-colors text-center">
+                                {game.awayTeam.teamCity} {game.awayTeam.teamName}
+                              </div>
+                            </div>
+                            {game.awayTeam.score !== null && (
+                              <div className="text-lg font-bold text-white flex-shrink-0">
+                                {game.awayTeam.score}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* VS / Status */}
+                          <div className="flex flex-col items-center gap-1">
+                            {game.gameStatus === 1 && game.gameEt ? (
+                              <div className="text-xs text-[#71767a] text-center whitespace-nowrap">
+                                {new Date(game.gameEt).toLocaleTimeString('zh-CN', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                  timeZone: 'Asia/Shanghai',
+                                  hour12: false
+                                })}
+                              </div>
+                            ) : (
+                              <div className="text-[#71767a] text-xs">VS</div>
+                            )}
+                            {getStatusBadge(game.gameStatus)}
+                          </div>
+
+                          {/* Home Team */}
+                          <div className="flex items-center gap-2 w-full">
+                            {game.homeTeam.logo && (
+                              <img
+                                src={game.homeTeam.logo}
+                                alt={game.homeTeam.teamName}
+                                className="w-8 h-8 object-contain flex-shrink-0"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <div className="text-white text-sm font-medium truncate group-hover:text-[#1d9bf0] transition-colors text-center">
+                                {game.homeTeam.teamCity} {game.homeTeam.teamName}
+                              </div>
+                            </div>
+                            {game.homeTeam.score !== null && (
+                              <div className="text-lg font-bold text-white flex-shrink-0">
+                                {game.homeTeam.score}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </motion.div>
@@ -350,7 +405,7 @@ function Home() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <span>📊</span>
-            今日最佳表现
+            今日 Top3!
           </h2>
         </div>
         {loadingStates.leagueLeaders ? (
@@ -538,7 +593,7 @@ function Home() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <span>⭐</span>
-              赛季最佳表现
+              赛季 Top3!
             </h2>
             <Link
               to="/stats/players"
@@ -570,18 +625,28 @@ function Home() {
                         }`}>
                           {index + 1}
                         </div>
+                        {player.headshot && (
+                          <img
+                            src={player.headshot}
+                            alt={player.name}
+                            className="w-8 h-8 rounded-full object-cover border border-[#2f3336]"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        )}
                         <div className="flex-1 min-w-0">
                           <div className="text-white font-medium truncate group-hover:text-[#1d9bf0] transition-colors">
-                            {player.name || player.displayName || 'Unknown'}
+                            {player.name || 'Unknown'}
                           </div>
                           <div className="text-xs text-[#71767a] truncate">
-                            {player.team || player.teamName || '-'}
+                            {player.team || '-'}
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-white font-bold">
-                          {player.stats?.avgPoints?.total || '-'}
+                          {player.value || '-'}
                         </div>
                         <div className="text-xs text-[#71767a]">PTS</div>
                       </div>
@@ -610,18 +675,28 @@ function Home() {
                         }`}>
                           {index + 1}
                         </div>
+                        {player.headshot && (
+                          <img
+                            src={player.headshot}
+                            alt={player.name}
+                            className="w-8 h-8 rounded-full object-cover border border-[#2f3336]"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        )}
                         <div className="flex-1 min-w-0">
                           <div className="text-white font-medium truncate group-hover:text-[#1d9bf0] transition-colors">
-                            {player.name || player.displayName || 'Unknown'}
+                            {player.name || 'Unknown'}
                           </div>
                           <div className="text-xs text-[#71767a] truncate">
-                            {player.team || player.teamName || '-'}
+                            {player.team || '-'}
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-white font-bold">
-                          {player.stats?.avgRebounds?.total || '-'}
+                          {player.value || '-'}
                         </div>
                         <div className="text-xs text-[#71767a]">REB</div>
                       </div>
@@ -650,18 +725,28 @@ function Home() {
                         }`}>
                           {index + 1}
                         </div>
+                        {player.headshot && (
+                          <img
+                            src={player.headshot}
+                            alt={player.name}
+                            className="w-8 h-8 rounded-full object-cover border border-[#2f3336]"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        )}
                         <div className="flex-1 min-w-0">
                           <div className="text-white font-medium truncate group-hover:text-[#1d9bf0] transition-colors">
-                            {player.name || player.displayName || 'Unknown'}
+                            {player.name || 'Unknown'}
                           </div>
                           <div className="text-xs text-[#71767a] truncate">
-                            {player.team || player.teamName || '-'}
+                            {player.team || '-'}
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-white font-bold">
-                          {player.stats?.avgAssists?.total || '-'}
+                          {player.value || '-'}
                         </div>
                         <div className="text-xs text-[#71767a]">AST</div>
                       </div>

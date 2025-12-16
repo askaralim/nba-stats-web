@@ -7,6 +7,8 @@ import { API_BASE_URL } from '../config';
 function TeamDetails() {
   const { teamAbbreviation } = useParams();
   const [teamData, setTeamData] = useState(null);
+  const [leaders, setLeaders] = useState(null);
+  const [recentGames, setRecentGames] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -16,12 +18,29 @@ function TeamDetails() {
         setError(null);
         setLoading(true);
         
-        const response = await fetch(`${API_BASE_URL}/api/nba/teams/${teamAbbreviation}`);
-        if (!response.ok) {
+        // Fetch all data in parallel using clean endpoints
+        const [teamResponse, leadersResponse, recentGamesResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/nba/teams/${teamAbbreviation}`),
+          fetch(`${API_BASE_URL}/api/nba/teams/${teamAbbreviation}/leaders`).catch(() => null),
+          fetch(`${API_BASE_URL}/api/nba/teams/${teamAbbreviation}/recent-games?seasontype=2`).catch(() => null)
+        ]);
+        
+        if (!teamResponse.ok) {
           throw new Error('加载球队详情失败');
         }
-        const data = await response.json();
+        
+        const data = await teamResponse.json();
         setTeamData(data);
+        
+        if (leadersResponse && leadersResponse.ok) {
+          const leadersData = await leadersResponse.json();
+          setLeaders(leadersData);
+        }
+        
+        if (recentGamesResponse && recentGamesResponse.ok) {
+          const gamesData = await recentGamesResponse.json();
+          setRecentGames(gamesData);
+        }
       } catch (err) {
         setError(err.message);
         console.error('Error fetching team details:', err);
@@ -35,143 +54,19 @@ function TeamDetails() {
     }
   }, [teamAbbreviation]);
 
-  // Extract record from team statistics
-  const getRecord = () => {
-    if (!teamData?.statistics?.team?.recordSummary) return null;
-    return teamData.statistics.team.recordSummary;
+  // Use clean API data directly - no extraction needed
+  const record = teamData?.team?.record || null;
+  const teamStats = teamData?.teamStats || {};
+  // Ensure players is an array
+  const playerStats = Array.isArray(teamData?.players) ? teamData.players : [];
+  const last5Games = recentGames?.last5Games || [];
+  const next3Games = recentGames?.next3Games || [];
+  const teamLeaders = leaders || {
+    offense: { points: null, assists: null, fieldGoalPct: null },
+    defense: { rebounds: null, steals: null, blocks: null }
   };
 
-  // Get team totals stats
-  const getTeamStats = () => {
-    if (!teamData?.statistics?.teamTotals) return null;
-    
-    const stats = {};
-    teamData.statistics.teamTotals.forEach(category => {
-      category.stats.forEach(stat => {
-        stats[stat.name] = stat;
-      });
-    });
-    
-    return {
-      gamesPlayed: stats.gamesPlayed?.displayValue || '-',
-      avgPoints: stats.avgPoints?.displayValue || '-',
-      avgRebounds: stats.avgRebounds?.displayValue || '-',
-      avgAssists: stats.avgAssists?.displayValue || '-',
-      avgSteals: stats.avgSteals?.displayValue || '-',
-      avgBlocks: stats.avgBlocks?.displayValue || '-',
-      avgTurnovers: stats.avgTurnovers?.displayValue || '-',
-      avgFouls: stats.avgFouls?.displayValue || '-',
-      fieldGoalPct: stats.fieldGoalPct?.displayValue || '-',
-      threePointPct: stats.threePointPct?.displayValue || '-',
-      freeThrowPct: stats.freeThrowPct?.displayValue || '-',
-      assistTurnoverRatio: stats.assistTurnoverRatio?.displayValue || '-'
-    };
-  };
-
-  // Get player statistics
-  // The API structure: results is an array of stat categories
-  // Each category has a leaders array with top players for that stat
-  // We collect all unique players from all leader arrays and combine their stats
-  const getPlayerStats = () => {
-    if (!teamData?.statistics?.results) return [];
-    
-    const results = teamData.statistics.results;
-    const playersMap = new Map();
-    
-    // Check if results is an array (stat categories with leaders)
-    if (Array.isArray(results)) {
-      // Iterate through each stat category in results
-      results.forEach(statCategory => {
-        if (!statCategory.leaders || !Array.isArray(statCategory.leaders)) return;
-        
-        // For each leader (player) in this stat category
-        statCategory.leaders.forEach(leader => {
-          if (!leader.athlete || !leader.statistics) return;
-          
-          const athlete = leader.athlete;
-          const playerId = athlete.id;
-          
-          if (!playerId) return;
-          
-          // Get or create player entry
-          if (!playersMap.has(playerId)) {
-            playersMap.set(playerId, {
-              id: playerId,
-              name: athlete.fullName || athlete.displayName || athlete.shortName || 'Unknown',
-              position: athlete.position?.abbreviation || athlete.position?.name || '-',
-              stats: {}
-            });
-          }
-          
-          const player = playersMap.get(playerId);
-          
-          // Extract stats from this leader's statistics array
-          if (Array.isArray(leader.statistics)) {
-            leader.statistics.forEach(category => {
-              if (Array.isArray(category.stats)) {
-                category.stats.forEach(stat => {
-                  // Store the stat (will be overwritten if we see it again, but that's okay)
-                  player.stats[stat.name] = stat;
-                });
-              }
-            });
-          }
-        });
-      });
-    } 
-    // Check if results has athletes directly (alternative structure)
-    else if (results.athletes && Array.isArray(results.athletes)) {
-      results.athletes.forEach(athlete => {
-        const playerId = athlete.id;
-        if (!playerId) return;
-        
-        const stats = {};
-        
-        // Extract stats from athlete.statistics array
-        if (Array.isArray(athlete.statistics)) {
-          athlete.statistics.forEach(category => {
-            if (Array.isArray(category.stats)) {
-              category.stats.forEach(stat => {
-                stats[stat.name] = stat;
-              });
-            }
-          });
-        }
-        
-        playersMap.set(playerId, {
-          id: playerId,
-          name: athlete.fullName || athlete.displayName || 'Unknown',
-          position: athlete.position?.abbreviation || athlete.position?.name || '-',
-          stats: stats
-        });
-      });
-    }
-    
-    // Convert map to array and format stats
-    return Array.from(playersMap.values()).map(player => {
-      const stats = player.stats;
-      
-      return {
-        id: player.id,
-        name: player.name,
-        position: player.position,
-        gamesPlayed: stats.gamesPlayed?.displayValue || '-',
-        gamesStarted: stats.gamesStarted?.displayValue || '-',
-        avgMinutes: stats.avgMinutes?.displayValue || '-',
-        avgPoints: stats.avgPoints?.displayValue || '-',
-        avgOffensiveRebounds: stats.avgOffensiveRebounds?.displayValue || '-',
-        avgDefensiveRebounds: stats.avgDefensiveRebounds?.displayValue || '-',
-        avgRebounds: stats.avgRebounds?.displayValue || '-',
-        avgAssists: stats.avgAssists?.displayValue || '-',
-        avgSteals: stats.avgSteals?.displayValue || '-',
-        avgBlocks: stats.avgBlocks?.displayValue || '-',
-        avgTurnovers: stats.avgTurnovers?.displayValue || '-',
-        avgFouls: stats.avgFouls?.displayValue || '-',
-        assistTurnoverRatio: stats.assistTurnoverRatio?.displayValue || '-'
-      };
-    });
-  };
-
+  // Early return if loading
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -198,10 +93,11 @@ function TeamDetails() {
     );
   }
 
+  if (!teamData) {
+    return null; // Don't render if data isn't loaded yet
+  }
+
   const team = teamData.team;
-  const record = getRecord();
-  const teamStats = getTeamStats();
-  const playerStats = getPlayerStats();
 
   return (
     <div>
@@ -220,10 +116,10 @@ function TeamDetails() {
 
       {/* Team Header */}
       <div className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6 mb-6">
-        <div className="flex items-center space-x-6">
-          {team.logos?.[0]?.href && (
+        <div className="flex items-center space-x-6 mb-6">
+          {team.logo && (
             <img
-              src={team.logos[0].href}
+              src={team.logo}
               alt={team.displayName}
               className="w-24 h-24 object-contain"
               onError={(e) => {
@@ -233,7 +129,7 @@ function TeamDetails() {
           )}
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">
-              {team.displayName || `${team.location} ${team.name}`}
+              {team.name}
             </h1>
             {record && (
               <div className="text-xl text-[#71767a]">
@@ -247,60 +143,535 @@ function TeamDetails() {
             )}
           </div>
         </div>
+
+        {/* Team Statistics Grid */}
+        {teamStats && Object.keys(teamStats).length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {/* Points */}
+            {teamStats.avgPoints && (
+              <motion.div 
+                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgPoints}</div>
+                <div className="text-sm text-[#71767a]">得分</div>
+              </motion.div>
+            )}
+            {/* Rebounds */}
+            {teamStats.avgRebounds && (
+              <motion.div 
+                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgRebounds}</div>
+                <div className="text-sm text-[#71767a]">篮板</div>
+              </motion.div>
+            )}
+            {/* Assists */}
+            {teamStats.avgAssists && (
+              <motion.div 
+                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgAssists}</div>
+                <div className="text-sm text-[#71767a]">助攻</div>
+              </motion.div>
+            )}
+            {/* Steals */}
+            {teamStats.avgSteals && (
+              <motion.div 
+                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgSteals}</div>
+                <div className="text-sm text-[#71767a]">抢断</div>
+              </motion.div>
+            )}
+            {/* Blocks */}
+            {teamStats.avgBlocks && (
+              <motion.div 
+                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgBlocks}</div>
+                <div className="text-sm text-[#71767a]">封盖</div>
+              </motion.div>
+            )}
+            {/* Field Goal % */}
+            {teamStats.fieldGoalPct && (
+              <motion.div 
+                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-3xl font-bold text-white mb-2">{teamStats.fieldGoalPct}%</div>
+                <div className="text-sm text-[#71767a]">投篮命中率</div>
+              </motion.div>
+            )}
+            {/* 3-Point Attempts */}
+            {/* {teamStats.avgThreePointFieldGoalsAttempted && (
+              <motion.div 
+                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgThreePointFieldGoalsAttempted}</div>
+                <div className="text-sm text-[#71767a]">三分出手数</div>
+              </motion.div>
+            )} */}
+            {/* 3-Point Makes */}
+            {/* {teamStats.avgThreePointFieldGoalsMade && (
+              <motion.div 
+                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgThreePointFieldGoalsMade}</div>
+                <div className="text-sm text-[#71767a]">三分命中数</div>
+              </motion.div>
+            )} */}
+            {/* 3-Point % */}
+            {teamStats.threePointPct && (
+              <motion.div 
+                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-3xl font-bold text-white mb-2">{teamStats.threePointPct}%</div>
+                <div className="text-sm text-[#71767a]">三分命中率</div>
+              </motion.div>
+            )}
+            {/* Free Throw Attempts */}
+            {/* {teamStats.avgFreeThrowsAttempted && (
+              <motion.div 
+                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgFreeThrowsAttempted}</div>
+                <div className="text-sm text-[#71767a]">罚球数</div>
+              </motion.div>
+            )} */}
+            {/* Free Throw % */}
+            {teamStats.freeThrowPct && (
+              <motion.div 
+                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-3xl font-bold text-white mb-2">{teamStats.freeThrowPct}%</div>
+                <div className="text-sm text-[#71767a]">罚球命中率</div>
+              </motion.div>
+            )}
+            {/* Turnovers */}
+            {teamStats.avgTurnovers && (
+              <motion.div 
+                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgTurnovers}</div>
+                <div className="text-sm text-[#71767a]">失误</div>
+              </motion.div>
+            )}
+            {/* Assist/Turnover Ratio */}
+            {/* {teamStats.assistTurnoverRatio && (
+              <motion.div 
+                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-3xl font-bold text-white mb-2">{teamStats.assistTurnoverRatio}</div>
+                <div className="text-sm text-[#71767a]">助攻失误比</div>
+              </motion.div>
+            )} */}
+            {/* Offensive Rebounds */}
+            {/* {teamStats.avgOffensiveRebounds && (
+              <motion.div 
+                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgOffensiveRebounds}</div>
+                <div className="text-sm text-[#71767a]">进攻篮板</div>
+              </motion.div>
+            )} */}
+            {/* Defensive Rebounds */}
+            {/* {teamStats.avgDefensiveRebounds && (
+              <motion.div 
+                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgDefensiveRebounds}</div>
+                <div className="text-sm text-[#71767a]">防守篮板</div>
+              </motion.div>
+            )} */}
+            {/* Fouls */}
+            {/* {teamStats.avgFouls && (
+              <motion.div 
+                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
+                whileHover={{ scale: 1.02 }}
+              >
+                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgFouls}</div>
+                <div className="text-sm text-[#71767a]">犯规</div>
+              </motion.div>
+            )} */}
+          </div>
+        )}
       </div>
 
-      {/* Team Statistics Table */}
-      {teamStats && (
+      {/* Last 5 Games & Next 3 Games */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Last 5 Games */}
         <motion.div 
-          className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6 mb-6"
+          className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
-          <h2 className="text-xl font-bold text-white mb-4">球队统计</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#2f3336]/30">
-                  <th className="text-center py-3 px-3 font-medium text-white">场次</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">得分</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">篮板</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">助攻</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">抢断</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">盖帽</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">失误</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">犯规</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">命中率</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">三分%</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">罚球%</th>
-                  <th className="text-center py-3 px-3 font-medium text-white">AST/TO</th>
-                </tr>
-              </thead>
-              <tbody>
-                <motion.tr 
-                  className="border-b border-[#2f3336]/20 bg-[#16181c]/30 transition-all duration-200 hover:bg-[#181818]/50"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.2, delay: 0.15 }}
+          <h2 className="text-xl font-bold text-white mb-4">最近比赛</h2>
+          {last5Games.length === 0 ? (
+            <p className="text-[#71767a] text-sm">暂无比赛数据</p>
+          ) : (
+            <div className="space-y-3">
+              {last5Games.map((game) => (
+                <Link
+                  key={game.id}
+                  to={`/games/${game.id}`}
+                  className="block p-3 rounded-lg bg-[#0f1114] hover:bg-[#181818]/50 transition-colors border border-[#2f3336]/30"
                 >
-                  <td className="text-center py-3 px-3 font-semibold text-white">{teamStats.gamesPlayed}</td>
-                  <td className="text-center py-3 px-3 text-white/90">{teamStats.avgPoints}</td>
-                  <td className="text-center py-3 px-3 text-white/90">{teamStats.avgRebounds}</td>
-                  <td className="text-center py-3 px-3 text-white/90">{teamStats.avgAssists}</td>
-                  <td className="text-center py-3 px-3 text-white/90">{teamStats.avgSteals}</td>
-                  <td className="text-center py-3 px-3 text-white/90">{teamStats.avgBlocks}</td>
-                  <td className="text-center py-3 px-3 text-white/90">{teamStats.avgTurnovers}</td>
-                  <td className="text-center py-3 px-3 text-white/90">{teamStats.avgFouls}</td>
-                  <td className="text-center py-3 px-3 text-white/90">{teamStats.fieldGoalPct}</td>
-                  <td className="text-center py-3 px-3 text-white/90">{teamStats.threePointPct}</td>
-                  <td className="text-center py-3 px-3 text-white/90">{teamStats.freeThrowPct}</td>
-                  <td className="text-center py-3 px-3 text-white/90">{teamStats.assistTurnoverRatio}</td>
-                </motion.tr>
-              </tbody>
-            </table>
-          </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className={`text-xs font-semibold px-2 py-1 rounded ${
+                        game.won ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'
+                      }`}>
+                        {game.won ? 'W' : 'L'}
+                      </span>
+                      <div className="flex-1">
+                        <div className="text-sm text-white">
+                          <span className={game.homeTeam.abbreviation === teamAbbreviation?.toUpperCase() ? 'font-semibold' : ''}>
+                            {game.homeTeam.name}
+                          </span>
+                          {' vs '}
+                          <span className={game.awayTeam.abbreviation === teamAbbreviation?.toUpperCase() ? 'font-semibold' : ''}>
+                            {game.awayTeam.name}
+                          </span>
+                        </div>
+                        <div className="text-xs text-[#71767a] mt-1">
+                          {new Date(game.date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-semibold text-white">
+                        {game.homeTeam.score} - {game.awayTeam.score}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </motion.div>
-      )}
+
+        {/* Next 3 Games */}
+        <motion.div 
+          className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.15 }}
+        >
+          <h2 className="text-xl font-bold text-white mb-4">即将开打</h2>
+          {next3Games.length === 0 ? (
+            <p className="text-[#71767a] text-sm">暂无比赛数据</p>
+          ) : (
+            <div className="space-y-3">
+              {next3Games.map((game) => (
+                <Link
+                  key={game.id}
+                  to={`/games/${game.id}`}
+                  className="block p-3 rounded-lg bg-[#0f1114] hover:bg-[#181818]/50 transition-colors border border-[#2f3336]/30"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="text-sm text-white">
+                        <span className={game.homeTeam.abbreviation === teamAbbreviation?.toUpperCase() ? 'font-semibold' : ''}>
+                          {game.homeTeam.name}
+                        </span>
+                        {' vs '}
+                        <span className={game.awayTeam.abbreviation === teamAbbreviation?.toUpperCase() ? 'font-semibold' : ''}>
+                          {game.awayTeam.name}
+                        </span>
+                      </div>
+                      <div className="text-xs text-[#71767a] mt-1">
+                        {new Date(game.date).toLocaleDateString('zh-CN', { 
+                          month: 'short', 
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </div>
+                    </div>
+                    <div className="text-xs text-[#71767a]">
+                      {game.status}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </motion.div>
+      </div>
+
+      {/* Team Leaders - Combined Offense & Defense */}
+      <motion.div 
+        className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6 mb-6"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.15 }}
+      >
+        <h2 className="text-2xl font-bold text-white mb-6">球队领袖</h2>
+        
+        {/* Offense & Defense Leaders in One Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Offense Leaders */}
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">进攻</h3>
+            <div className="space-y-4">
+          {/* Points Per Game */}
+          {teamLeaders.offense.points && (
+            <div className="flex items-center gap-4 p-4 rounded-lg bg-[#0f1114] border border-[#2f3336]/30">
+              <div className="text-sm font-medium text-[#71767a] w-32">得分</div>
+              {teamLeaders.offense.points.headshot && (
+                <img
+                  src={teamLeaders.offense.points.headshot}
+                  alt={teamLeaders.offense.points.name}
+                  className="w-12 h-12 rounded-full object-cover"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              )}
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  {teamLeaders.offense.points.id ? (
+                    <Link
+                      to={`/players/${teamLeaders.offense.points.id}`}
+                      className="font-semibold text-white hover:text-[#1d9bf0] transition-colors"
+                    >
+                      {teamLeaders.offense.points.name}
+                    </Link>
+                  ) : (
+                    <span className="font-semibold text-white">{teamLeaders.offense.points.name}</span>
+                  )}
+                  <span className="text-xs text-[#71767a]">
+                    {teamLeaders.offense.points.position} #{teamLeaders.offense.points.jersey}
+                  </span>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-white">{teamLeaders.offense.points.mainStat}</div>
+                <div className="text-xs text-[#71767a] mt-1">
+                  MIN: {teamLeaders.offense.points.additionalStats?.avgMinutes || '-'} | 
+                  FG%: {teamLeaders.offense.points.additionalStats?.fieldGoalPct || '-'}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Assists Per Game */}
+          {teamLeaders.offense.assists && (
+            <div className="flex items-center gap-4 p-4 rounded-lg bg-[#0f1114] border border-[#2f3336]/30">
+              <div className="text-sm font-medium text-[#71767a] w-32">助攻</div>
+              {teamLeaders.offense.assists.headshot && (
+                <img
+                  src={teamLeaders.offense.assists.headshot}
+                  alt={teamLeaders.offense.assists.name}
+                  className="w-12 h-12 rounded-full object-cover"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              )}
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  {teamLeaders.offense.assists.id ? (
+                    <Link
+                      to={`/players/${teamLeaders.offense.assists.id}`}
+                      className="font-semibold text-white hover:text-[#1d9bf0] transition-colors"
+                    >
+                      {teamLeaders.offense.assists.name}
+                    </Link>
+                  ) : (
+                    <span className="font-semibold text-white">{teamLeaders.offense.assists.name}</span>
+                  )}
+                  <span className="text-xs text-[#71767a]">
+                    {teamLeaders.offense.assists.position} #{teamLeaders.offense.assists.jersey}
+                  </span>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-white">{teamLeaders.offense.assists.mainStat}</div>
+                <div className="text-xs text-[#71767a] mt-1">
+                  PPG: {teamLeaders.offense.assists.additionalStats?.avgPoints || '-'} | 
+                  TO: {teamLeaders.offense.assists.additionalStats?.avgTurnovers || '-'}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Field Goal Percentage */}
+          {teamLeaders.offense.fieldGoalPct && (
+            <div className="flex items-center gap-4 p-4 rounded-lg bg-[#0f1114] border border-[#2f3336]/30">
+              <div className="text-sm font-medium text-[#71767a] w-32">投篮%</div>
+              {teamLeaders.offense.fieldGoalPct.headshot && (
+                <img
+                  src={teamLeaders.offense.fieldGoalPct.headshot}
+                  alt={teamLeaders.offense.fieldGoalPct.name}
+                  className="w-12 h-12 rounded-full object-cover"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              )}
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  {teamLeaders.offense.fieldGoalPct.id ? (
+                    <Link
+                      to={`/players/${teamLeaders.offense.fieldGoalPct.id}`}
+                      className="font-semibold text-white hover:text-[#1d9bf0] transition-colors"
+                    >
+                      {teamLeaders.offense.fieldGoalPct.name}
+                    </Link>
+                  ) : (
+                    <span className="font-semibold text-white">{teamLeaders.offense.fieldGoalPct.name}</span>
+                  )}
+                  <span className="text-xs text-[#71767a]">
+                    {teamLeaders.offense.fieldGoalPct.position} #{teamLeaders.offense.fieldGoalPct.jersey}
+                  </span>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-white">{teamLeaders.offense.fieldGoalPct.mainStat}</div>
+                <div className="text-xs text-[#71767a] mt-1">
+                  MIN: {teamLeaders.offense.fieldGoalPct.additionalStats?.avgMinutes || '-'} | 
+                  PPG: {teamLeaders.offense.fieldGoalPct.additionalStats?.avgPoints || '-'}
+                </div>
+              </div>
+            </div>
+          )}
+            </div>
+          </div>
+
+          {/* Defense Leaders */}
+          <div>
+            <h3 className="text-lg font-semibold text-white mb-4">防守</h3>
+            <div className="space-y-4">
+          {/* Rebounds Per Game */}
+          {teamLeaders.defense.rebounds && (
+            <div className="flex items-center gap-4 p-4 rounded-lg bg-[#0f1114] border border-[#2f3336]/30">
+              <div className="text-sm font-medium text-[#71767a] w-32">篮板</div>
+              {teamLeaders.defense.rebounds.headshot && (
+                <img
+                  src={teamLeaders.defense.rebounds.headshot}
+                  alt={teamLeaders.defense.rebounds.name}
+                  className="w-12 h-12 rounded-full object-cover"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              )}
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  {teamLeaders.defense.rebounds.id ? (
+                    <Link
+                      to={`/players/${teamLeaders.defense.rebounds.id}`}
+                      className="font-semibold text-white hover:text-[#1d9bf0] transition-colors"
+                    >
+                      {teamLeaders.defense.rebounds.name}
+                    </Link>
+                  ) : (
+                    <span className="font-semibold text-white">{teamLeaders.defense.rebounds.name}</span>
+                  )}
+                  <span className="text-xs text-[#71767a]">
+                    {teamLeaders.defense.rebounds.position} #{teamLeaders.defense.rebounds.jersey}
+                  </span>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-white">{teamLeaders.defense.rebounds.mainStat}</div>
+                <div className="text-xs text-[#71767a] mt-1">
+                  DRPG: {teamLeaders.defense.rebounds.additionalStats?.avgDefensiveRebounds || '-'} | 
+                  ORPG: {teamLeaders.defense.rebounds.additionalStats?.avgOffensiveRebounds || '-'}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Steals Per Game */}
+          {teamLeaders.defense.steals && (
+            <div className="flex items-center gap-4 p-4 rounded-lg bg-[#0f1114] border border-[#2f3336]/30">
+              <div className="text-sm font-medium text-[#71767a] w-32">抢断</div>
+              {teamLeaders.defense.steals.headshot && (
+                <img
+                  src={teamLeaders.defense.steals.headshot}
+                  alt={teamLeaders.defense.steals.name}
+                  className="w-12 h-12 rounded-full object-cover"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              )}
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  {teamLeaders.defense.steals.id ? (
+                    <Link
+                      to={`/players/${teamLeaders.defense.steals.id}`}
+                      className="font-semibold text-white hover:text-[#1d9bf0] transition-colors"
+                    >
+                      {teamLeaders.defense.steals.name}
+                    </Link>
+                  ) : (
+                    <span className="font-semibold text-white">{teamLeaders.defense.steals.name}</span>
+                  )}
+                  <span className="text-xs text-[#71767a]">
+                    {teamLeaders.defense.steals.position} #{teamLeaders.defense.steals.jersey}
+                  </span>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-white">{teamLeaders.defense.steals.mainStat}</div>
+                <div className="text-xs text-[#71767a] mt-1">
+                  MIN: {teamLeaders.defense.steals.additionalStats?.avgMinutes || '-'} | 
+                  TO: {teamLeaders.defense.steals.additionalStats?.avgTurnovers || '-'}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Blocks Per Game */}
+          {teamLeaders.defense.blocks && (
+            <div className="flex items-center gap-4 p-4 rounded-lg bg-[#0f1114] border border-[#2f3336]/30">
+              <div className="text-sm font-medium text-[#71767a] w-32">盖帽</div>
+              {teamLeaders.defense.blocks.headshot && (
+                <img
+                  src={teamLeaders.defense.blocks.headshot}
+                  alt={teamLeaders.defense.blocks.name}
+                  className="w-12 h-12 rounded-full object-cover"
+                  onError={(e) => { e.target.style.display = 'none'; }}
+                />
+              )}
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  {teamLeaders.defense.blocks.id ? (
+                    <Link
+                      to={`/players/${teamLeaders.defense.blocks.id}`}
+                      className="font-semibold text-white hover:text-[#1d9bf0] transition-colors"
+                    >
+                      {teamLeaders.defense.blocks.name}
+                    </Link>
+                  ) : (
+                    <span className="font-semibold text-white">{teamLeaders.defense.blocks.name}</span>
+                  )}
+                  <span className="text-xs text-[#71767a]">
+                    {teamLeaders.defense.blocks.position} #{teamLeaders.defense.blocks.jersey}
+                  </span>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-2xl font-bold text-white">{teamLeaders.defense.blocks.mainStat}</div>
+                <div className="text-xs text-[#71767a] mt-1">
+                  STL: {teamLeaders.defense.blocks.additionalStats?.avgSteals || '-'} | 
+                  REB: {teamLeaders.defense.blocks.additionalStats?.avgRebounds || '-'}
+                </div>
+              </div>
+            </div>
+          )}
+            </div>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Player Statistics Table */}
       {playerStats.length > 0 && (
@@ -334,6 +705,10 @@ function TeamDetails() {
               <tbody>
                 {playerStats.map((player, index) => {
                   const isEven = index % 2 === 0;
+                  // Debug: log first player to check data structure
+                  if (index === 0) {
+                    console.log('First player in table:', player);
+                  }
                   return (
                   <tr
                     key={player.id || index}
@@ -370,19 +745,19 @@ function TeamDetails() {
                       )}
                       <span className="text-[#71767a] ml-2 text-xs">({player.position})</span>
                     </td>
-                    <td className="py-3 px-3 text-center text-white/90">{player.gamesPlayed}</td>
-                    <td className="py-3 px-3 text-center text-white/90">{player.gamesStarted}</td>
-                    <td className="py-3 px-3 text-center text-white/90">{player.avgMinutes}</td>
-                    <td className="py-3 px-3 text-center font-semibold text-white">{player.avgPoints}</td>
-                    <td className="py-3 px-3 text-center text-white/90">{player.avgOffensiveRebounds}</td>
-                    <td className="py-3 px-3 text-center text-white/90">{player.avgDefensiveRebounds}</td>
-                    <td className="py-3 px-3 text-center text-white/90">{player.avgRebounds}</td>
-                    <td className="py-3 px-3 text-center text-white/90">{player.avgAssists}</td>
-                    <td className="py-3 px-3 text-center text-white/90">{player.avgSteals}</td>
-                    <td className="py-3 px-3 text-center text-white/90">{player.avgBlocks}</td>
-                    <td className="py-3 px-3 text-center text-white/90">{player.avgTurnovers}</td>
-                    <td className="py-3 px-3 text-center text-white/90">{player.avgFouls}</td>
-                    <td className="py-3 px-3 text-center text-white/90">{player.assistTurnoverRatio}</td>
+                    <td className="py-3 px-3 text-center text-white/90">{player.gamesPlayed || '-'}</td>
+                    <td className="py-3 px-3 text-center text-white/90">{player.gamesStarted || '-'}</td>
+                    <td className="py-3 px-3 text-center text-white/90">{player.avgMinutes || '-'}</td>
+                    <td className="py-3 px-3 text-center font-semibold text-white">{player.avgPoints || '-'}</td>
+                    <td className="py-3 px-3 text-center text-white/90">{player.avgOffensiveRebounds || '-'}</td>
+                    <td className="py-3 px-3 text-center text-white/90">{player.avgDefensiveRebounds || '-'}</td>
+                    <td className="py-3 px-3 text-center text-white/90">{player.avgRebounds || '-'}</td>
+                    <td className="py-3 px-3 text-center text-white/90">{player.avgAssists || '-'}</td>
+                    <td className="py-3 px-3 text-center text-white/90">{player.avgSteals || '-'}</td>
+                    <td className="py-3 px-3 text-center text-white/90">{player.avgBlocks || '-'}</td>
+                    <td className="py-3 px-3 text-center text-white/90">{player.avgTurnovers || '-'}</td>
+                    <td className="py-3 px-3 text-center text-white/90">{player.avgFouls || '-'}</td>
+                    <td className="py-3 px-3 text-center text-white/90">{player.assistTurnoverRatio || '-'}</td>
                   </tr>
                 );
                 })}

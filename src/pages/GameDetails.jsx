@@ -72,7 +72,7 @@ function GameDetails() {
     return player?.athleteId || player?.id || player?.name || '';
   };
 
-  // Get top performer objects with full data for widget display (separated by team)
+  // Get top performer objects from backend (pre-calculated with team info)
   const getTopPerformerObjects = useCallback(() => {
     if (!game?.boxscore?.teams || game.boxscore.teams.length < 2) {
       return { 
@@ -83,61 +83,23 @@ function GameDetails() {
 
     const [team1, team2] = game.boxscore.teams;
     
-    // Get players for each team
-    const getTeamPlayers = (team) => {
-      const players = [];
-      if (team.starters) {
-        team.starters.forEach(player => {
-          players.push({
-            ...player,
-            teamName: team.teamName,
-            teamLogo: team.teamLogo,
-            stats: player.stats || {}
-          });
-        });
-      }
-      if (team.bench) {
-        team.bench.forEach(player => {
-          players.push({
-            ...player,
-            teamName: team.teamName,
-            teamLogo: team.teamLogo,
-            stats: player.stats || {}
-          });
-        });
-      }
-      return players;
-    };
-
-    const team1Players = getTeamPlayers(team1);
-    const team2Players = getTeamPlayers(team2);
-
-    // Get top 3 performers for each category for each team
-    const getTopPerformers = (players, category, limit = 3) => {
-      if (players.length === 0) return [];
-      return [...players].sort((a, b) => {
-        const aVal = a.stats[category] || (category === 'plusMinus' ? -Infinity : 0);
-        const bVal = b.stats[category] || (category === 'plusMinus' ? -Infinity : 0);
-        return bVal - aVal;
-      }).slice(0, limit);
-    };
-
+    // Use pre-calculated topPerformers from backend (team info already included)
     return {
       team1: {
-        points: getTopPerformers(team1Players, 'points'),
-        rebounds: getTopPerformers(team1Players, 'rebounds'),
-        assists: getTopPerformers(team1Players, 'assists'),
-        plusMinus: getTopPerformers(team1Players, 'plusMinus'),
-        steals: getTopPerformers(team1Players, 'steals'),
-        blocks: getTopPerformers(team1Players, 'blocks')
+        points: team1.topPerformers?.points || [],
+        rebounds: team1.topPerformers?.rebounds || [],
+        assists: team1.topPerformers?.assists || [],
+        plusMinus: team1.topPerformers?.plusMinus || [],
+        steals: team1.topPerformers?.steals || [],
+        blocks: team1.topPerformers?.blocks || []
       },
       team2: {
-        points: getTopPerformers(team2Players, 'points'),
-        rebounds: getTopPerformers(team2Players, 'rebounds'),
-        assists: getTopPerformers(team2Players, 'assists'),
-        plusMinus: getTopPerformers(team2Players, 'plusMinus'),
-        steals: getTopPerformers(team2Players, 'steals'),
-        blocks: getTopPerformers(team2Players, 'blocks')
+        points: team2.topPerformers?.points || [],
+        rebounds: team2.topPerformers?.rebounds || [],
+        assists: team2.topPerformers?.assists || [],
+        plusMinus: team2.topPerformers?.plusMinus || [],
+        steals: team2.topPerformers?.steals || [],
+        blocks: team2.topPerformers?.blocks || []
       }
     };
   }, [game]);

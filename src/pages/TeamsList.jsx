@@ -32,19 +32,9 @@ function TeamsList() {
     fetchStandings();
   }, [fetchStandings]);
 
-  const formatWinPercent = (percent) => {
-    if (percent === null || percent === undefined) return '-';
-    return (percent * 100).toFixed(1);
-  };
-
-  const formatGamesBehind = (gamesBehind) => {
-    if (gamesBehind === null || gamesBehind === undefined || gamesBehind === 0) return '-';
-    return gamesBehind.toFixed(1);
-  };
-
   const getStreakColor = (streakType) => {
     if (!streakType) return 'text-[#71767a]';
-    return streakType.toLowerCase().includes('win') ? 'text-green-400' : 'text-red-400';
+    return streakType.toLowerCase().includes('w') ? 'text-green-400' : 'text-red-400';
   };
 
   if (loading) {
@@ -169,10 +159,10 @@ function TeamsList() {
                           {team.losses ?? '-'}
                         </td>
                         <td className="py-3 px-4 text-center text-white/90">
-                          {formatWinPercent(team.winPercent)}%
+                          {team.winPercentDisplay || '-'}
                         </td>
                         <td className="py-3 px-4 text-center text-[#71767a] text-sm">
-                          {formatGamesBehind(team.gamesBehind)}
+                          {team.gamesBehindDisplay || '-'}
                         </td>
                         <td className="py-3 px-4 text-center">
                           <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -267,10 +257,10 @@ function TeamsList() {
                           {team.losses ?? '-'}
                         </td>
                         <td className="py-3 px-4 text-center text-white/90">
-                          {formatWinPercent(team.winPercent)}%
+                          {team.winPercentDisplay || '-'}
                         </td>
                         <td className="py-3 px-4 text-center text-[#71767a] text-sm">
-                          {formatGamesBehind(team.gamesBehind)}
+                          {team.gamesBehindDisplay || '-'}
                         </td>
                         <td className="py-3 px-4 text-center">
                           <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-full text-xs font-medium ${
