@@ -55,9 +55,15 @@ const GameCard = memo(function GameCard({ game }) {
       >
         {/* Glassmorphism Card */}
         <div 
-          className="relative bg-[#16181c]/80 backdrop-blur-xl rounded-2xl border border-[#2f3336]/50 overflow-hidden transition-all duration-300 hover:bg-[#16181c]/90 hover:border-[#2f3336] hover:shadow-2xl hover:shadow-black/50 hover:-translate-y-1"
+          className={`relative backdrop-blur-xl rounded-2xl border overflow-hidden transition-all duration-300 hover:-translate-y-1 ${
+            game.gameStatus === 2
+              ? 'bg-red-950/30 border-red-500/50 hover:bg-red-950/40 hover:border-red-500/70 hover:shadow-2xl hover:shadow-red-900/30'
+              : 'bg-[#16181c]/80 border-[#2f3336]/50 hover:bg-[#16181c]/90 hover:border-[#2f3336] hover:shadow-2xl hover:shadow-black/50'
+          }`}
           style={{
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+            boxShadow: game.gameStatus === 2 
+              ? '0 8px 32px rgba(220, 38, 38, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+              : '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
           }}
         >
           {/* Colored Left Border */}
@@ -68,7 +74,20 @@ const GameCard = memo(function GameCard({ game }) {
 
           <div className="p-6 pl-7">
             {/* Premium Status Badge */}
-            <div className="flex justify-end mb-5">
+            <div className="flex justify-between items-start mb-5">
+              {/* LIVE Badge - Always show for live games */}
+              {game.gameStatus === 2 && (
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="px-3 py-1 rounded-full text-xs font-bold bg-red-600 text-white border border-red-500 animate-pulse"
+                  style={{
+                    boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
+                  }}
+                >
+                  LIVE
+                </motion.span>
+              )}
               <motion.span
                 whileHover={{ scale: 1.05 }}
                 className={`px-4 py-1.5 rounded-full text-xs font-bold border backdrop-blur-sm ${getStatusColor(
@@ -114,7 +133,11 @@ const GameCard = memo(function GameCard({ game }) {
             </div>
             {game.awayTeam.score !== null && (
                   <motion.div 
-                    className="text-3xl font-bold text-white ml-4 flex-shrink-0"
+                    className={`text-3xl font-bold ml-4 flex-shrink-0 ${
+                      game.gameStatus === 2 
+                        ? 'text-red-400 animate-pulse' 
+                        : 'text-white'
+                    }`}
                     initial={{ scale: 0.9 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.1 }}
@@ -160,7 +183,11 @@ const GameCard = memo(function GameCard({ game }) {
             </div>
             {game.homeTeam.score !== null && (
                   <motion.div 
-                    className="text-3xl font-bold text-white ml-4 flex-shrink-0"
+                    className={`text-3xl font-bold ml-4 flex-shrink-0 ${
+                      game.gameStatus === 2 
+                        ? 'text-red-400 animate-pulse' 
+                        : 'text-white'
+                    }`}
                     initial={{ scale: 0.9 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.15 }}

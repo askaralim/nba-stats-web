@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import GameCard from '../components/GameCard';
+import GameCardSkeleton from '../components/GameCardSkeleton';
+import GameStatsSummary from '../components/GameStatsSummary';
 import { API_BASE_URL } from '../config';
 
 function GamesToday() {
@@ -91,11 +93,17 @@ function GamesToday() {
       const dateToFetch = targetDate || selectedDate;
       const dateParam = formatDateForAPI(dateToFetch);
       
-      const response = await fetch(`${API_BASE_URL}/api/nba/games/today?date=${dateParam}`);
-      if (!response.ok) {
-        throw new Error('加载比赛失败');
+      let data;
+      if (USE_MOCK_DATA) {
+        // Use mock data for local testing
+        data = await getMockGames(dateParam);
+      } else {
+        const response = await fetch(`${API_BASE_URL}/api/nba/games/today?date=${dateParam}`);
+        if (!response.ok) {
+          throw new Error('加载比赛失败');
+        }
+        data = await response.json();
       }
-      const data = await response.json();
       const newGames = data.games || [];
       
       // If refreshing, merge updates to prevent unnecessary re-renders
@@ -174,12 +182,41 @@ function GamesToday() {
     setDateRange(generateDateRange(today));
   };
 
+  // Show skeleton loaders on initial load
   if (loading && games.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#1d9bf0] mb-4"></div>
-          <p className="text-[#71767a]">加载比赛中...</p>
+      <div>
+        {/* Date Navigator Skeleton */}
+        <div className="bg-[#16181c]/80 backdrop-blur-xl rounded-2xl border border-[#2f3336]/50 p-4 mb-6 shadow-lg shadow-black/20">
+          <div className="flex items-center justify-between gap-3">
+            {/* Previous button skeleton */}
+            <div className="flex-shrink-0 w-10 h-10 bg-[#2f3336]/50 rounded-full animate-pulse" />
+            
+            {/* Date pills skeleton */}
+            <div className="flex items-center gap-2 overflow-x-auto flex-1 scrollbar-hide">
+              {Array.from({ length: 7 }).map((_, i) => (
+                <div key={i} className="h-10 w-32 bg-[#2f3336]/30 rounded-full flex-shrink-0 animate-pulse" />
+              ))}
+            </div>
+            
+            {/* Next and Today buttons skeleton */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="w-10 h-10 bg-[#2f3336]/50 rounded-full animate-pulse" />
+              <div className="w-10 h-10 bg-[#2f3336]/50 rounded-full animate-pulse" />
+            </div>
+          </div>
+        </div>
+
+        {/* Selected Date Display Skeleton */}
+        <div className="mb-6">
+          <div className="h-6 w-48 bg-[#2f3336]/30 rounded animate-pulse" />
+        </div>
+
+        {/* Game Cards Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <GameCardSkeleton key={index} />
+          ))}
         </div>
       </div>
     );
@@ -316,7 +353,7 @@ function GamesToday() {
       </div>
 
       {/* Page Header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-3xl font-bold text-white mb-2">NBA比赛</h1>
         {selectedDate && (
           <p className="text-[#71767a]">
@@ -324,6 +361,11 @@ function GamesToday() {
           </p>
         )}
       </div>
+
+      {/* Game Statistics Summary */}
+      {!loading && games.length > 0 && (
+        <GameStatsSummary games={games} />
+      )}
 
       {games.length === 0 && !loading ? (
         <div className="bg-[#16181c] rounded-xl border border-[#2f3336] p-12 text-center">

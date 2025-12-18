@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
-import { API_BASE_URL } from '../config';
+import GameStatsSummary from '../components/GameStatsSummary';
+import { API_BASE_URL, USE_MOCK_DATA } from '../config';
+import { getMockGames, getMockHomeData } from '../utils/mockGameData';
 
 // Get current date in Chinese timezone
 const getChineseDate = () => {
@@ -70,49 +72,104 @@ function Home() {
 
     // Fetch all data independently in parallel - each updates its own state when ready
     // 1. Today's Games with featured games (highest priority - shown first)
-    fetch(`${API_BASE_URL}/api/nba/games/today?date=${todayParam}&featured=true`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        setFeaturedGames(data?.featured || []);
-        setOtherGames(data?.other || []);
-        setLoadingStates(prev => ({ ...prev, todayGames: false }));
-      })
-      .catch(() => {
-        setLoadingStates(prev => ({ ...prev, todayGames: false }));
-      });
+    if (USE_MOCK_DATA) {
+      // Use mock data for local testing
+      getMockGames(todayParam)
+        .then(data => {
+          setFeaturedGames(data?.featured || []);
+          setOtherGames(data?.other || []);
+          setLoadingStates(prev => ({ ...prev, todayGames: false }));
+          if (import.meta.env.DEV) {
+            console.log('[MOCK DATA] Loaded games:', {
+              total: data?.totalGames || 0,
+              featured: data?.featured?.length || 0,
+              other: data?.other?.length || 0
+            });
+          }
+        })
+        .catch(() => {
+          setLoadingStates(prev => ({ ...prev, todayGames: false }));
+        });
+    } else {
+      fetch(`${API_BASE_URL}/api/nba/games/today?date=${todayParam}&featured=true`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          setFeaturedGames(data?.featured || []);
+          setOtherGames(data?.other || []);
+          setLoadingStates(prev => ({ ...prev, todayGames: false }));
+        })
+        .catch(() => {
+          setLoadingStates(prev => ({ ...prev, todayGames: false }));
+        });
+    }
 
     // 2. Home page data (today's top performers + season leaders)
-    fetch(`${API_BASE_URL}/api/nba/home?date=${todayParam}`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        // Set today's top performers
-        setLeagueLeaders(data?.todayTopPerformers || { points: [], rebounds: [], assists: [] });
-        setLoadingStates(prev => ({ ...prev, leagueLeaders: false }));
-        
-        // Set season leaders
-        setTopPerformers(data?.seasonLeaders || { points: [], rebounds: [], assists: [] });
-        setLoadingStates(prev => ({ ...prev, topPerformers: false }));
-      })
-      .catch(() => {
-        setLeagueLeaders({ points: [], rebounds: [], assists: [] });
-        setTopPerformers({ points: [], rebounds: [], assists: [] });
-        setLoadingStates(prev => ({ 
-          ...prev, 
-          leagueLeaders: false, 
-          topPerformers: false 
-        }));
-      });
+    if (USE_MOCK_DATA) {
+      // Use mock data for local testing
+      getMockHomeData()
+        .then(data => {
+          // Set today's top performers
+          setLeagueLeaders(data?.todayTopPerformers || { points: [], rebounds: [], assists: [] });
+          setLoadingStates(prev => ({ ...prev, leagueLeaders: false }));
+          
+          // Set season leaders
+          setTopPerformers(data?.seasonLeaders || { points: [], rebounds: [], assists: [] });
+          setLoadingStates(prev => ({ ...prev, topPerformers: false }));
+        })
+        .catch(() => {
+          setLeagueLeaders({ points: [], rebounds: [], assists: [] });
+          setTopPerformers({ points: [], rebounds: [], assists: [] });
+          setLoadingStates(prev => ({ 
+            ...prev, 
+            leagueLeaders: false, 
+            topPerformers: false 
+          }));
+        });
+    } else {
+      fetch(`${API_BASE_URL}/api/nba/home?date=${todayParam}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          // Set today's top performers
+          setLeagueLeaders(data?.todayTopPerformers || { points: [], rebounds: [], assists: [] });
+          setLoadingStates(prev => ({ ...prev, leagueLeaders: false }));
+          
+          // Set season leaders
+          setTopPerformers(data?.seasonLeaders || { points: [], rebounds: [], assists: [] });
+          setLoadingStates(prev => ({ ...prev, topPerformers: false }));
+        })
+        .catch(() => {
+          setLeagueLeaders({ points: [], rebounds: [], assists: [] });
+          setTopPerformers({ points: [], rebounds: [], assists: [] });
+          setLoadingStates(prev => ({ 
+            ...prev, 
+            leagueLeaders: false, 
+            topPerformers: false 
+          }));
+        });
+    }
 
     // 3. Upcoming Games (tomorrow)
-    fetch(`${API_BASE_URL}/api/nba/games/today?date=${tomorrowParam}`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        setUpcomingGames((data?.games || []).slice(0, 5));
-        setLoadingStates(prev => ({ ...prev, upcomingGames: false }));
-      })
-      .catch(() => {
-        setLoadingStates(prev => ({ ...prev, upcomingGames: false }));
-      });
+    if (USE_MOCK_DATA) {
+      // Use mock data for local testing
+      getMockGames(tomorrowParam)
+        .then(data => {
+          setUpcomingGames((data?.games || []).slice(0, 5));
+          setLoadingStates(prev => ({ ...prev, upcomingGames: false }));
+        })
+        .catch(() => {
+          setLoadingStates(prev => ({ ...prev, upcomingGames: false }));
+        });
+    } else {
+      fetch(`${API_BASE_URL}/api/nba/games/today?date=${tomorrowParam}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          setUpcomingGames((data?.games || []).slice(0, 5));
+          setLoadingStates(prev => ({ ...prev, upcomingGames: false }));
+        })
+        .catch(() => {
+          setLoadingStates(prev => ({ ...prev, upcomingGames: false }));
+        });
+    }
 
     // 4. News (can be slower, loads independently)
     fetch(`${API_BASE_URL}/api/nba/news`)
@@ -126,17 +183,32 @@ function Home() {
       });
   }, []);
 
+  // Combine all games for stats calculation
+  const allGames = [...featuredGames, ...otherGames];
+
+  // Sort games: Live (2) first, Scheduled (1) second, Finished (3) last
+  const sortGamesByStatus = (games) => {
+    return [...games].sort((a, b) => {
+      // Live games (status 2) come first
+      if (a.gameStatus === 2 && b.gameStatus !== 2) return -1;
+      if (a.gameStatus !== 2 && b.gameStatus === 2) return 1;
+      // Scheduled games (status 1) come second
+      if (a.gameStatus === 1 && b.gameStatus === 3) return -1;
+      if (a.gameStatus === 3 && b.gameStatus === 1) return 1;
+      // Within same status, maintain original order
+      return 0;
+    });
+  };
+
+  const sortedFeaturedGames = sortGamesByStatus(featuredGames);
+  const sortedOtherGames = sortGamesByStatus(otherGames);
+
   return (
     <div className="space-y-6">
-      {/* Welcome Header */}
-      {/* <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h1 className="text-4xl font-bold text-white mb-2">欢迎来到 Yo! NBA</h1>
-        <p className="text-[#71767a] text-lg">NBA 数据与新闻一站式平台</p>
-      </motion.div> */}
+      {/* Game Statistics Summary */}
+      {!loadingStates.todayGames && allGames.length > 0 && (
+        <GameStatsSummary games={allGames} />
+      )}
 
       {/* Today's Games Widget - Featured Games */}
       <motion.div
@@ -163,21 +235,20 @@ function Home() {
 
         {loadingStates.todayGames ? (
           <LoadingSpinner />
-        ) : featuredGames.length === 0 && otherGames.length === 0 ? (
+        ) : sortedFeaturedGames.length === 0 && sortedOtherGames.length === 0 ? (
           <div className="text-center py-4">
             <p className="text-[#71767a] text-sm">今日暂无比赛</p>
           </div>
         ) : (
           <div className="space-y-6">
             {/* Today at a Glance - Featured Games */}
-            {featuredGames.length > 0 && (
+            {sortedFeaturedGames.length > 0 && (
               <div>
-                <h3 className="text-sm font-semibold text-[#71767a] mb-3 flex items-center gap-2">
-                  <span>⭐</span>
-                  Today at a Glance
-                </h3>
+                {/* <h3 className="text-sm font-semibold text-[#71767a] mb-3 flex items-center gap-2">
+                  别错过
+                </h3> */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {featuredGames.map((game) => {
+                  {sortedFeaturedGames.map((game) => {
                     const getStatusBadge = (status) => {
                       switch (status) {
                         case 1:
@@ -193,9 +264,9 @@ function Home() {
 
                     const getFeaturedBadge = (reason) => {
                       const badges = {
-                        'overtime': { text: 'OT', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
-                        'marquee': { text: 'Marquee', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
-                        'closest': { text: 'Best Game', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+                        'overtime': { text: '加时', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
+                        'marquee': { text: '热门', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
+                        'closest': { text: '焦灼', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
                         'live': { text: 'Live', color: 'bg-red-500/20 text-red-400 border-red-500/30 animate-pulse' }
                       };
                       const badge = badges[reason] || badges['marquee'];
@@ -206,20 +277,35 @@ function Home() {
                       );
                     };
 
+                    const isLive = game.gameStatus === 2;
+                    
                     return (
                       <Link
                         key={game.gameId}
                         to={`/games/${game.gameId}`}
-                        className="block p-4 bg-gradient-to-br from-[#181818]/80 to-[#16181c]/80 rounded-xl border-2 border-[#2f3336]/50 hover:border-[#1d9bf0]/50 hover:bg-[#181818] transition-all group relative overflow-hidden"
+                        className={`block p-4 rounded-xl border-2 transition-all group relative overflow-hidden ${
+                          isLive 
+                            ? 'bg-gradient-to-br from-red-950/40 to-[#181818]/90 border-red-500/60 hover:border-red-500/80 hover:bg-red-950/50 shadow-lg shadow-red-900/20' 
+                            : 'bg-gradient-to-br from-[#181818]/80 to-[#16181c]/80 border-[#2f3336]/50 hover:border-[#1d9bf0]/50 hover:bg-[#181818]'
+                        }`}
                       >
-                        {/* Featured Badge */}
-                        {game.featuredReason && (
-                          <div className="absolute top-3 right-3 z-10">
+                        {/* LIVE Badge - Always show for live games, positioned at top-left */}
+                        {isLive && (
+                          <div className="absolute top-3 left-3 z-10">
+                            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-600 text-white border border-red-500 animate-pulse">
+                              LIVE
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* Featured Badge - positioned at top-center */}
+                        {game.featuredReason && !isLive && (
+                          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
                             {getFeaturedBadge(game.featuredReason)}
                           </div>
                         )}
                         
-                        <div className="flex flex-col items-center gap-3">
+                        <div className={`flex flex-col items-center gap-3 ${isLive ? 'pt-6' : (game.featuredReason ? 'pt-6' : '')}`}>
                           {/* Away Team */}
                           <div className="flex items-center gap-3 w-full">
                             {game.awayTeam.logo && (
@@ -233,12 +319,18 @@ function Home() {
                               />
                             )}
                             <div className="min-w-0 flex-1">
-                              <div className="text-white text-sm font-semibold truncate group-hover:text-[#1d9bf0] transition-colors">
+                              <div className={`text-sm font-semibold truncate transition-colors ${
+                                isLive ? 'text-white' : 'text-white group-hover:text-[#1d9bf0]'
+                              }`}>
                                 {game.awayTeam.teamCity} {game.awayTeam.teamName}
                               </div>
                             </div>
                             {game.awayTeam.score !== null && (
-                              <div className="text-xl font-bold text-white flex-shrink-0">
+                              <div className={`text-xl font-bold flex-shrink-0 ${
+                                isLive 
+                                  ? 'text-red-400 animate-pulse' 
+                                  : 'text-white'
+                              }`}>
                                 {game.awayTeam.score}
                               </div>
                             )}
@@ -274,12 +366,18 @@ function Home() {
                               />
                             )}
                             <div className="min-w-0 flex-1">
-                              <div className="text-white text-sm font-semibold truncate group-hover:text-[#1d9bf0] transition-colors">
+                              <div className={`text-sm font-semibold truncate transition-colors ${
+                                isLive ? 'text-white' : 'text-white group-hover:text-[#1d9bf0]'
+                              }`}>
                                 {game.homeTeam.teamCity} {game.homeTeam.teamName}
                               </div>
                             </div>
                             {game.homeTeam.score !== null && (
-                              <div className="text-xl font-bold text-white flex-shrink-0">
+                              <div className={`text-xl font-bold flex-shrink-0 ${
+                                isLive 
+                                  ? 'text-red-400 animate-pulse' 
+                                  : 'text-white'
+                              }`}>
                                 {game.homeTeam.score}
                               </div>
                             )}
@@ -293,11 +391,11 @@ function Home() {
             )}
 
             {/* Other Games */}
-            {otherGames.length > 0 && (
+            {sortedOtherGames.length > 0 && (
               <div>
                 <h3 className="text-sm font-semibold text-[#71767a] mb-3">其他比赛</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                  {otherGames.map((game) => {
+                  {sortedOtherGames.map((game) => {
                     const getStatusBadge = (status) => {
                       switch (status) {
                         case 1:
@@ -311,13 +409,28 @@ function Home() {
                       }
                     };
 
+                    const isLive = game.gameStatus === 2;
+                    
                     return (
                       <Link
                         key={game.gameId}
                         to={`/games/${game.gameId}`}
-                        className="block p-3 bg-[#181818]/50 rounded-lg border border-[#2f3336]/30 hover:bg-[#181818] hover:border-[#2f3336] transition-all group"
+                        className={`block p-3 rounded-lg border transition-all group relative ${
+                          isLive 
+                            ? 'bg-red-950/30 border-red-500/50 hover:bg-red-950/40 hover:border-red-500/70 shadow-md shadow-red-900/10' 
+                            : 'bg-[#181818]/50 border-[#2f3336]/30 hover:bg-[#181818] hover:border-[#2f3336]'
+                        }`}
                       >
-                        <div className="flex flex-col items-center gap-2">
+                        {/* LIVE Badge for other games, positioned at top-left */}
+                        {isLive && (
+                          <div className="absolute top-2 left-2 z-10">
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white border border-red-500 animate-pulse">
+                              LIVE
+                            </span>
+                          </div>
+                        )}
+                        
+                        <div className={`flex flex-col items-center gap-2 ${isLive ? 'pt-5' : ''}`}>
                           {/* Away Team */}
                           <div className="flex items-center gap-2 w-full">
                             {game.awayTeam.logo && (
@@ -331,12 +444,18 @@ function Home() {
                               />
                             )}
                             <div className="min-w-0 flex-1">
-                              <div className="text-white text-sm font-medium truncate group-hover:text-[#1d9bf0] transition-colors text-center">
+                              <div className={`text-sm font-medium truncate transition-colors text-center ${
+                                isLive ? 'text-white' : 'text-white group-hover:text-[#1d9bf0]'
+                              }`}>
                                 {game.awayTeam.teamCity} {game.awayTeam.teamName}
                               </div>
                             </div>
                             {game.awayTeam.score !== null && (
-                              <div className="text-lg font-bold text-white flex-shrink-0">
+                              <div className={`text-lg font-bold flex-shrink-0 ${
+                                isLive 
+                                  ? 'text-red-400 animate-pulse' 
+                                  : 'text-white'
+                              }`}>
                                 {game.awayTeam.score}
                               </div>
                             )}
@@ -372,12 +491,18 @@ function Home() {
                               />
                             )}
                             <div className="min-w-0 flex-1">
-                              <div className="text-white text-sm font-medium truncate group-hover:text-[#1d9bf0] transition-colors text-center">
+                              <div className={`text-sm font-medium truncate transition-colors text-center ${
+                                isLive ? 'text-white' : 'text-white group-hover:text-[#1d9bf0]'
+                              }`}>
                                 {game.homeTeam.teamCity} {game.homeTeam.teamName}
                               </div>
                             </div>
                             {game.homeTeam.score !== null && (
-                              <div className="text-lg font-bold text-white flex-shrink-0">
+                              <div className={`text-lg font-bold flex-shrink-0 ${
+                                isLive 
+                                  ? 'text-red-400 animate-pulse' 
+                                  : 'text-white'
+                              }`}>
                                 {game.homeTeam.score}
                               </div>
                             )}
@@ -593,7 +718,7 @@ function Home() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <span>⭐</span>
-              赛季 Top3!
+              赛季 Top 3!
             </h2>
             <Link
               to="/stats/players"
@@ -772,7 +897,7 @@ function Home() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <span>📰</span>
-              New!
+              News!
             </h2>
             <Link
               to="/news"

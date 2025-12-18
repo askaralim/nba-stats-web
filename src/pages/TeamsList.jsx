@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
+import TeamStandingsSkeleton from '../components/TeamStandingsSkeleton';
 import { API_BASE_URL } from '../config';
 
 function TeamsList() {
@@ -39,10 +40,20 @@ function TeamsList() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#1d9bf0] mb-4"></div>
-          <p className="text-[#71767a]">加载排名中...</p>
+      <div>
+        {/* Header Skeleton */}
+        <div className="mb-8">
+          <div className="h-9 w-48 bg-[#2f3336]/50 rounded animate-pulse mb-2" />
+          <div className="h-5 w-64 bg-[#2f3336]/30 rounded animate-pulse" />
+        </div>
+
+        {/* Standings Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Eastern Conference Skeleton */}
+          <TeamStandingsSkeleton count={15} />
+          
+          {/* Western Conference Skeleton */}
+          <TeamStandingsSkeleton count={15} />
         </div>
       </div>
     );

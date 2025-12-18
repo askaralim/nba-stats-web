@@ -7,3 +7,7 @@
 // In production, set VITE_API_URL environment variable
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+// Mock data flag - only for local testing
+// Set VITE_USE_MOCK_DATA=true in .env.local to use mock data
+export const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true' && import.meta.env.DEV;
+
