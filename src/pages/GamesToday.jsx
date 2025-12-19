@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GameCard from '../components/GameCard';
 import GameCardSkeleton from '../components/GameCardSkeleton';
 import GameStatsSummary from '../components/GameStatsSummary';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL, USE_MOCK_DATA } from '../config';
+import { getMockGames } from '../utils/mockGameData';
 
 function GamesToday() {
   const [games, setGames] = useState([]);
@@ -106,6 +107,22 @@ function GamesToday() {
       }
       const newGames = data.games || [];
       
+      // Sort games: Live (2) first, Scheduled (1) second, Finished (3) last
+      const sortGamesByStatus = (gamesList) => {
+        return [...gamesList].sort((a, b) => {
+          // Live games (status 2) come first
+          if (a.gameStatus === 2 && b.gameStatus !== 2) return -1;
+          if (a.gameStatus !== 2 && b.gameStatus === 2) return 1;
+          // Scheduled games (status 1) come second
+          if (a.gameStatus === 1 && b.gameStatus === 3) return -1;
+          if (a.gameStatus === 3 && b.gameStatus === 1) return 1;
+          // Within same status, maintain original order
+          return 0;
+        });
+      };
+      
+      const sortedNewGames = sortGamesByStatus(newGames);
+      
       // If refreshing, merge updates to prevent unnecessary re-renders
       if (isRefresh && games.length > 0) {
         setGames(prevGames => {
@@ -113,7 +130,7 @@ function GamesToday() {
           const gamesMap = new Map(prevGames.map(g => [g.gameId, g]));
           
           // Update only changed games
-          newGames.forEach(newGame => {
+          sortedNewGames.forEach(newGame => {
             const existingGame = gamesMap.get(newGame.gameId);
             if (existingGame) {
               // Only update if data actually changed
@@ -125,10 +142,11 @@ function GamesToday() {
             }
           });
           
-          return Array.from(gamesMap.values());
+          // Sort the merged games
+          return sortGamesByStatus(Array.from(gamesMap.values()));
         });
       } else {
-        setGames(newGames);
+        setGames(sortedNewGames);
       }
     } catch (err) {
       setError(err.message);
