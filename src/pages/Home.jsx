@@ -186,33 +186,12 @@ function Home() {
       });
   }, []);
 
-  // Use all games for stats calculation (from API response, not just featured + other)
+  // Use all games for stats calculation (from API response, already sorted by backend)
   const allGames = allTodayGames.length > 0 ? allTodayGames : [...featuredGames, ...otherGames];
-
-  // Sort games: Live (2) first, Scheduled (1) second, Finished (3) last
-  const sortGamesByStatus = (games) => {
-    return [...games].sort((a, b) => {
-      // Live games (status 2) ALWAYS come first - highest priority
-      if (a.gameStatus === 2 && b.gameStatus !== 2) return -1;
-      if (a.gameStatus !== 2 && b.gameStatus === 2) return 1;
-      // Scheduled games (status 1) come second
-      if (a.gameStatus === 1 && b.gameStatus === 3) return -1;
-      if (a.gameStatus === 3 && b.gameStatus === 1) return 1;
-      // Within same status, maintain original order
-      return 0;
-    });
-  };
-
-  // For featured games, ensure ALL live games appear before ANY finished games
-  // This ensures live games have absolute priority in the featured section
-  const sortedFeaturedGames = (() => {
-    const liveGames = featuredGames.filter(g => g.gameStatus === 2);
-    const nonLiveGames = featuredGames.filter(g => g.gameStatus !== 2);
-    const sortedNonLive = sortGamesByStatus(nonLiveGames);
-    return [...liveGames, ...sortedNonLive];
-  })();
   
-  const sortedOtherGames = sortGamesByStatus(otherGames);
+  // Games are already sorted by backend with priority:
+  // 1. Live marquee → 2. Live closest → 3. Live OT → 4. Closest → 5. OT → 6. Scheduled → 7. Regular finished
+  // No need to sort again in frontend
 
   return (
     <div className="space-y-6">
@@ -246,20 +225,20 @@ function Home() {
 
         {loadingStates.todayGames ? (
           <LoadingSpinner />
-        ) : sortedFeaturedGames.length === 0 && sortedOtherGames.length === 0 ? (
+        ) : featuredGames.length === 0 && otherGames.length === 0 ? (
           <div className="text-center py-4">
             <p className="text-[#71767a] text-sm">今日暂无比赛</p>
           </div>
         ) : (
           <div className="space-y-6">
             {/* Today at a Glance - Featured Games */}
-            {sortedFeaturedGames.length > 0 && (
+            {featuredGames.length > 0 && (
               <div>
                 {/* <h3 className="text-sm font-semibold text-[#71767a] mb-3 flex items-center gap-2">
                   别错过
                 </h3> */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {sortedFeaturedGames.map((game) => {
+                  {featuredGames.map((game) => {
                     // Format period text for live games
                     const getPeriodText = (period, gameStatusText) => {
                       if (!period) return '';
@@ -420,11 +399,11 @@ function Home() {
             )}
 
             {/* Other Games */}
-            {sortedOtherGames.length > 0 && (
+            {otherGames.length > 0 && (
               <div>
                 <h3 className="text-sm font-semibold text-[#71767a] mb-3">其他比赛</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                  {sortedOtherGames.map((game) => {
+                  {otherGames.map((game) => {
                     // Format period text for live games
                     const getPeriodText = (period, gameStatusText) => {
                       if (!period) return '';

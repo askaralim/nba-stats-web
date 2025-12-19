@@ -10,7 +10,6 @@ import { getMockGames } from '../utils/mockGameData';
 function GamesToday() {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   
   // Get current date in Chinese timezone
@@ -86,9 +85,7 @@ function GamesToday() {
   const fetchGames = useCallback(async (targetDate = null, isRefresh = false) => {
     try {
       setError(null);
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
+      if (!isRefresh) {
         setLoading(true);
       }
       const dateToFetch = targetDate || selectedDate;
@@ -107,16 +104,50 @@ function GamesToday() {
       }
       const newGames = data.games || [];
       
-      // Sort games: Live (2) first, Scheduled (1) second, Finished (3) last
+      // Helper functions for game categorization
+      const isOvertimeGame = (game) => {
+        return game.period > 4 || 
+               (game.gameStatusText && (
+                 game.gameStatusText.toLowerCase().includes('ot') ||
+                 game.gameStatusText.toLowerCase().includes('overtime')
+               ));
+      };
+
+      const getScoreDifference = (game) => {
+        if (game.gameStatus !== 3) return null; // Only for completed games
+        if (game.awayTeam?.score === null || game.homeTeam?.score === null) return null;
+        return Math.abs(game.awayTeam.score - game.homeTeam.score);
+      };
+
+      const isClosestGame = (game) => {
+        const scoreDiff = getScoreDifference(game);
+        return scoreDiff !== null && scoreDiff <= 5;
+      };
+
+      // Sort games: Live → Closest → OT → Scheduled → Regular Finished
       const sortGamesByStatus = (gamesList) => {
         return [...gamesList].sort((a, b) => {
-          // Live games (status 2) come first
+          // Priority 1: Live games (status 2)
           if (a.gameStatus === 2 && b.gameStatus !== 2) return -1;
           if (a.gameStatus !== 2 && b.gameStatus === 2) return 1;
-          // Scheduled games (status 1) come second
+          
+          // Priority 2: Closest games (finished with score diff <= 5)
+          const aIsClosest = isClosestGame(a);
+          const bIsClosest = isClosestGame(b);
+          if (aIsClosest && !bIsClosest) return -1;
+          if (!aIsClosest && bIsClosest) return 1;
+          
+          // Priority 3: OT games (finished with OT)
+          const aIsOT = isOvertimeGame(a);
+          const bIsOT = isOvertimeGame(b);
+          if (aIsOT && !bIsOT) return -1;
+          if (!aIsOT && bIsOT) return 1;
+          
+          // Priority 4: Scheduled games (status 1) come before regular finished
           if (a.gameStatus === 1 && b.gameStatus === 3) return -1;
           if (a.gameStatus === 3 && b.gameStatus === 1) return 1;
-          // Within same status, maintain original order
+          
+          // Within same priority, maintain original order
           return 0;
         });
       };
@@ -152,10 +183,8 @@ function GamesToday() {
       setError(err.message);
       console.error('Error fetching games:', err);
     } finally {
-      if (isRefresh) {
-        setRefreshing(false);
-      } else {
-      setLoading(false);
+      if (!isRefresh) {
+        setLoading(false);
       }
     }
   }, [selectedDate, games.length]);
@@ -393,14 +422,6 @@ function GamesToday() {
         </div>
       ) : (
         <div className="relative">
-          {refreshing && games.length > 0 && (
-            <div className="absolute top-4 right-4 z-10">
-              <div className="bg-[#16181c] border border-[#2f3336] rounded-full px-3 py-1.5 flex items-center gap-2 shadow-lg">
-                <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-[#1d9bf0]"></div>
-                <p className="text-[#71767a] text-xs">更新中...</p>
-              </div>
-            </div>
-          )}
           {loading && games.length > 0 && (
             <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-10 rounded-xl">
               <div className="text-center">

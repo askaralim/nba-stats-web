@@ -8,7 +8,6 @@ function GameDetails() {
   const { gameId } = useParams();
   const [game, setGame] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const gameRef = useRef(null); // Use ref to track current game without causing re-renders
 
@@ -20,9 +19,7 @@ function GameDetails() {
   const fetchGameDetails = useCallback(async (isRefresh = false) => {
     try {
       setError(null);
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
+      if (!isRefresh) {
         setLoading(true);
       }
       const response = await fetch(`${API_BASE_URL}/api/nba/games/${gameId}`);
@@ -44,10 +41,8 @@ function GameDetails() {
       setError(err.message);
       console.error('Error fetching game details:', err);
     } finally {
-      if (isRefresh) {
-        setRefreshing(false);
-      } else {
-      setLoading(false);
+      if (!isRefresh) {
+        setLoading(false);
       }
     }
   }, [gameId]); // Removed 'game' from dependencies to prevent infinite loop
@@ -183,14 +178,6 @@ function GameDetails() {
 
       {/* Game Header */}
       <div className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6 mb-6 relative">
-        {refreshing && (
-          <div className="absolute top-4 right-4 z-10">
-            <div className="bg-[#16181c] border border-[#2f3336] rounded-full px-3 py-1.5 flex items-center gap-2 shadow-lg">
-              <div className="inline-block animate-spin rounded-full h-3 w-3 border-b-2 border-[#1d9bf0]"></div>
-              <p className="text-[#71767a] text-xs">更新中...</p>
-            </div>
-          </div>
-        )}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-white">比赛详情</h1>
           <span
