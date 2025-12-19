@@ -77,8 +77,8 @@ function GameStatsSummary({ games }) {
         {stats.inProgress > 0 && (
           <div className="flex items-center gap-2">
             <span className="text-[#71767a] text-sm">·</span>
-            <span className="text-red-400 text-sm font-medium flex items-center gap-1.5">
-              <span className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
+            <span className="text-orange-400 text-sm font-medium flex items-center gap-1.5">
+              <span className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" />
               {stats.inProgress} 进行中
             </span>
           </div>

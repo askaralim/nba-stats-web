@@ -50,6 +50,7 @@ const LoadingSpinner = ({ size = 'small' }) => (
 function Home() {
   const [featuredGames, setFeaturedGames] = useState([]);
   const [otherGames, setOtherGames] = useState([]);
+  const [allTodayGames, setAllTodayGames] = useState([]);
   const [upcomingGames, setUpcomingGames] = useState([]);
   const [topPerformers, setTopPerformers] = useState([]);
   const [leagueLeaders, setLeagueLeaders] = useState({});
@@ -78,6 +79,7 @@ function Home() {
         .then(data => {
           setFeaturedGames(data?.featured || []);
           setOtherGames(data?.other || []);
+          setAllTodayGames(data?.games || []);
           setLoadingStates(prev => ({ ...prev, todayGames: false }));
           if (import.meta.env.DEV) {
             console.log('[MOCK DATA] Loaded games:', {
@@ -96,6 +98,7 @@ function Home() {
         .then(data => {
           setFeaturedGames(data?.featured || []);
           setOtherGames(data?.other || []);
+          setAllTodayGames(data?.games || []);
           setLoadingStates(prev => ({ ...prev, todayGames: false }));
         })
         .catch(() => {
@@ -183,13 +186,13 @@ function Home() {
       });
   }, []);
 
-  // Combine all games for stats calculation
-  const allGames = [...featuredGames, ...otherGames];
+  // Use all games for stats calculation (from API response, not just featured + other)
+  const allGames = allTodayGames.length > 0 ? allTodayGames : [...featuredGames, ...otherGames];
 
   // Sort games: Live (2) first, Scheduled (1) second, Finished (3) last
   const sortGamesByStatus = (games) => {
     return [...games].sort((a, b) => {
-      // Live games (status 2) come first
+      // Live games (status 2) ALWAYS come first - highest priority
       if (a.gameStatus === 2 && b.gameStatus !== 2) return -1;
       if (a.gameStatus !== 2 && b.gameStatus === 2) return 1;
       // Scheduled games (status 1) come second
@@ -200,7 +203,15 @@ function Home() {
     });
   };
 
-  const sortedFeaturedGames = sortGamesByStatus(featuredGames);
+  // For featured games, ensure ALL live games appear before ANY finished games
+  // This ensures live games have absolute priority in the featured section
+  const sortedFeaturedGames = (() => {
+    const liveGames = featuredGames.filter(g => g.gameStatus === 2);
+    const nonLiveGames = featuredGames.filter(g => g.gameStatus !== 2);
+    const sortedNonLive = sortGamesByStatus(nonLiveGames);
+    return [...liveGames, ...sortedNonLive];
+  })();
+  
   const sortedOtherGames = sortGamesByStatus(otherGames);
 
   return (
@@ -249,12 +260,30 @@ function Home() {
                 </h3> */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {sortedFeaturedGames.map((game) => {
+                    // Format period text for live games
+                    const getPeriodText = (period, gameStatusText) => {
+                      if (!period) return '';
+                      if (gameStatusText && gameStatusText.toLowerCase().includes('halftime')) {
+                        return 'Halftime';
+                      }
+                      if (period <= 4) {
+                        return `Q${period}`;
+                      }
+                      const otNumber = period - 4;
+                      return `OT${otNumber}`;
+                    };
+
                     const getStatusBadge = (status) => {
                       switch (status) {
                         case 1:
                           return <span className="text-xs text-[#71767a]">已安排</span>;
-                        case 2:
-                          return <span className="text-xs text-red-400 animate-pulse">● 直播中</span>;
+                        case 2: {
+                          const periodText = getPeriodText(game.period, game.gameStatusText);
+                          if (periodText) {
+                            return <span className="text-xs text-orange-400">{periodText}</span>;
+                          }
+                          return <span className="text-xs text-orange-400">直播中</span>;
+                        }
                         case 3:
                           return <span className="text-xs text-green-400">已结束</span>;
                         default:
@@ -267,7 +296,7 @@ function Home() {
                         'overtime': { text: '加时', color: 'bg-purple-500/20 text-purple-400 border-purple-500/30' },
                         'marquee': { text: '热门', color: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30' },
                         'closest': { text: '焦灼', color: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
-                        'live': { text: 'Live', color: 'bg-red-500/20 text-red-400 border-red-500/30 animate-pulse' }
+                        'live': { text: 'Live', color: 'bg-orange-500/20 text-orange-400 border-orange-500/30 animate-pulse' }
                       };
                       const badge = badges[reason] || badges['marquee'];
                       return (
@@ -285,14 +314,14 @@ function Home() {
                         to={`/games/${game.gameId}`}
                         className={`block p-4 rounded-xl border-2 transition-all group relative overflow-hidden ${
                           isLive 
-                            ? 'bg-gradient-to-br from-red-950/40 to-[#181818]/90 border-red-500/60 hover:border-red-500/80 hover:bg-red-950/50 shadow-lg shadow-red-900/20' 
+                            ? 'bg-gradient-to-br from-orange-950/40 to-[#181818]/90 border-orange-500/60 hover:border-orange-500/80 hover:bg-orange-950/50 shadow-lg shadow-orange-900/20' 
                             : 'bg-gradient-to-br from-[#181818]/80 to-[#16181c]/80 border-[#2f3336]/50 hover:border-[#1d9bf0]/50 hover:bg-[#181818]'
                         }`}
                       >
                         {/* LIVE Badge - Always show for live games, positioned at top-left */}
                         {isLive && (
                           <div className="absolute top-3 left-3 z-10">
-                            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-red-600 text-white border border-red-500 animate-pulse">
+                            <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-orange-600 text-white border border-orange-500 animate-pulse">
                               LIVE
                             </span>
                           </div>
@@ -328,7 +357,7 @@ function Home() {
                             {game.awayTeam.score !== null && (
                               <div className={`text-xl font-bold flex-shrink-0 ${
                                 isLive 
-                                  ? 'text-red-400 animate-pulse' 
+                                  ? 'text-orange-400 animate-pulse' 
                                   : 'text-white'
                               }`}>
                                 {game.awayTeam.score}
@@ -375,7 +404,7 @@ function Home() {
                             {game.homeTeam.score !== null && (
                               <div className={`text-xl font-bold flex-shrink-0 ${
                                 isLive 
-                                  ? 'text-red-400 animate-pulse' 
+                                  ? 'text-orange-400 animate-pulse' 
                                   : 'text-white'
                               }`}>
                                 {game.homeTeam.score}
@@ -396,12 +425,30 @@ function Home() {
                 <h3 className="text-sm font-semibold text-[#71767a] mb-3">其他比赛</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                   {sortedOtherGames.map((game) => {
+                    // Format period text for live games
+                    const getPeriodText = (period, gameStatusText) => {
+                      if (!period) return '';
+                      if (gameStatusText && gameStatusText.toLowerCase().includes('halftime')) {
+                        return 'Halftime';
+                      }
+                      if (period <= 4) {
+                        return `Q${period}`;
+                      }
+                      const otNumber = period - 4;
+                      return `OT${otNumber}`;
+                    };
+
                     const getStatusBadge = (status) => {
                       switch (status) {
                         case 1:
                           return <span className="text-xs text-[#71767a]">已安排</span>;
-                        case 2:
-                          return <span className="text-xs text-red-400 animate-pulse">● 直播中</span>;
+                        case 2: {
+                          const periodText = getPeriodText(game.period, game.gameStatusText);
+                          if (periodText) {
+                            return <span className="text-xs text-orange-400">{periodText}</span>;
+                          }
+                          return <span className="text-xs text-orange-400">直播中</span>;
+                        }
                         case 3:
                           return <span className="text-xs text-green-400">已结束</span>;
                         default:
@@ -417,14 +464,14 @@ function Home() {
                         to={`/games/${game.gameId}`}
                         className={`block p-3 rounded-lg border transition-all group relative ${
                           isLive 
-                            ? 'bg-red-950/30 border-red-500/50 hover:bg-red-950/40 hover:border-red-500/70 shadow-md shadow-red-900/10' 
+                            ? 'bg-orange-950/30 border-orange-500/50 hover:bg-orange-950/40 hover:border-orange-500/70 shadow-md shadow-orange-900/10' 
                             : 'bg-[#181818]/50 border-[#2f3336]/30 hover:bg-[#181818] hover:border-[#2f3336]'
                         }`}
                       >
                         {/* LIVE Badge for other games, positioned at top-left */}
                         {isLive && (
                           <div className="absolute top-2 left-2 z-10">
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white border border-red-500 animate-pulse">
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-600 text-white border border-orange-500 animate-pulse">
                               LIVE
                             </span>
                           </div>
@@ -453,7 +500,7 @@ function Home() {
                             {game.awayTeam.score !== null && (
                               <div className={`text-lg font-bold flex-shrink-0 ${
                                 isLive 
-                                  ? 'text-red-400 animate-pulse' 
+                                  ? 'text-orange-400 animate-pulse' 
                                   : 'text-white'
                               }`}>
                                 {game.awayTeam.score}
@@ -500,7 +547,7 @@ function Home() {
                             {game.homeTeam.score !== null && (
                               <div className={`text-lg font-bold flex-shrink-0 ${
                                 isLive 
-                                  ? 'text-red-400 animate-pulse' 
+                                  ? 'text-orange-400 animate-pulse' 
                                   : 'text-white'
                               }`}>
                                 {game.homeTeam.score}
@@ -549,7 +596,7 @@ function Home() {
                   <Link
                     key={player.id || index}
                     to={`/players/${player.id}`}
-                    className="flex items-center justify-between p-3 bg-gradient-to-r from-red-900/20 to-red-800/10 rounded-lg border border-red-800/20 hover:border-red-700/40 hover:bg-red-900/30 transition-all group"
+                    className="flex items-center justify-between p-3 bg-gradient-to-r from-orange-900/20 to-orange-800/10 rounded-lg border border-orange-800/20 hover:border-orange-700/40 hover:bg-orange-900/30 transition-all group"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
@@ -579,7 +626,7 @@ function Home() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-xl font-bold text-red-400">
+                      <div className="text-xl font-bold text-orange-400">
                         {player.points || 0}
                       </div>
                       <div className="text-xs text-[#71767a]">PTS</div>

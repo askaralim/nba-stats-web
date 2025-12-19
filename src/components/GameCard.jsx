@@ -25,7 +25,7 @@ const GameCard = memo(function GameCard({ game }) {
       case 1:
         return 'bg-gradient-to-r from-[#16181c] to-[#181818] text-[#71767a] border border-[#2f3336]';
       case 2:
-        return 'bg-gradient-to-r from-red-900/40 to-red-800/30 text-red-400 border border-red-500/50 animate-pulse shadow-lg shadow-red-900/20';
+        return 'bg-gradient-to-r from-orange-900/40 to-orange-800/30 text-orange-400 border border-orange-500/50 animate-pulse shadow-lg shadow-orange-900/20';
       case 3:
         return 'bg-gradient-to-r from-green-900/40 to-green-800/30 text-green-400 border border-green-500/50';
       default:
@@ -37,6 +37,42 @@ const GameCard = memo(function GameCard({ game }) {
     1: '已安排',
     2: '直播中',
     3: '已结束'
+  };
+
+  // Format period text for live games (Q1, Q2, Q3, Q4, OT1, OT2, etc.)
+  const getPeriodText = (period, gameStatusText) => {
+    if (!period) return '';
+    
+    // Check for halftime
+    if (gameStatusText && gameStatusText.toLowerCase().includes('halftime')) {
+      return 'Halftime';
+    }
+    
+    // Regular quarters
+    if (period <= 4) {
+      return `Q${period}`;
+    }
+    
+    // Overtime periods
+    const otNumber = period - 4;
+    return `OT${otNumber}`;
+  };
+
+  // Get status text for display
+  const getStatusDisplayText = () => {
+    if (game.gameStatus === 2) {
+      // Live game - show period or halftime
+      const periodText = getPeriodText(game.period, game.gameStatusText);
+      if (periodText) {
+        return periodText;
+      }
+      // Fallback to gameStatusText if period not available
+      if (game.gameStatusText && game.gameStatusText.toLowerCase().includes('halftime')) {
+        return 'Halftime';
+      }
+      return game.gameStatusText || '直播中';
+    }
+    return statusInfo[game.gameStatus] || game.gameStatusText || '';
   };
 
   // Get primary team color for border (use away team or home team)
@@ -57,7 +93,7 @@ const GameCard = memo(function GameCard({ game }) {
         <div 
           className={`relative backdrop-blur-xl rounded-2xl border overflow-hidden transition-all duration-300 hover:-translate-y-1 ${
             game.gameStatus === 2
-              ? 'bg-red-950/30 border-red-500/50 hover:bg-red-950/40 hover:border-red-500/70 hover:shadow-2xl hover:shadow-red-900/30'
+              ? 'bg-orange-950/30 border-orange-500/50 hover:bg-orange-950/40 hover:border-orange-500/70 hover:shadow-2xl hover:shadow-orange-900/30'
               : 'bg-[#16181c]/80 border-[#2f3336]/50 hover:bg-[#16181c]/90 hover:border-[#2f3336] hover:shadow-2xl hover:shadow-black/50'
           }`}
           style={{
@@ -80,7 +116,7 @@ const GameCard = memo(function GameCard({ game }) {
                 <motion.span
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="px-3 py-1 rounded-full text-xs font-bold bg-red-600 text-white border border-red-500 animate-pulse"
+                  className="px-3 py-1 rounded-full text-xs font-bold bg-orange-600 text-white border border-orange-500 animate-pulse"
                   style={{
                     boxShadow: '0 4px 12px rgba(220, 38, 38, 0.4)'
                   }}
@@ -97,8 +133,7 @@ const GameCard = memo(function GameCard({ game }) {
                   boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2)'
                 }}
           >
-            {statusInfo[game.gameStatus] || game.gameStatusText}
-            {game.gameStatus === 2 && game.gameStatusText && ` - ${game.gameStatusText}`}
+            {getStatusDisplayText()}
               </motion.span>
         </div>
 
@@ -135,7 +170,7 @@ const GameCard = memo(function GameCard({ game }) {
                   <motion.div 
                     className={`text-3xl font-bold ml-4 flex-shrink-0 ${
                       game.gameStatus === 2 
-                        ? 'text-red-400 animate-pulse' 
+                        ? 'text-orange-400 animate-pulse' 
                         : 'text-white'
                     }`}
                     initial={{ scale: 0.9 }}
@@ -185,7 +220,7 @@ const GameCard = memo(function GameCard({ game }) {
                   <motion.div 
                     className={`text-3xl font-bold ml-4 flex-shrink-0 ${
                       game.gameStatus === 2 
-                        ? 'text-red-400 animate-pulse' 
+                        ? 'text-orange-400 animate-pulse' 
                         : 'text-white'
                     }`}
                     initial={{ scale: 0.9 }}
