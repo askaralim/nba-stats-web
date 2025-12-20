@@ -180,14 +180,22 @@ function GameDetails() {
       <div className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6 mb-6 relative">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-white">比赛详情</h1>
-          <span
-            className={`px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(
-              game.gameStatus
-            )}`}
-          >
-            {statusInfo[game.gameStatus] || game.gameStatusText}
-            {game.gameStatus === 2 && game.gameStatusText && ` - ${game.gameStatusText}`}
-          </span>
+          <div className="flex items-center gap-2">
+            <span
+              className={`px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(
+                game.gameStatus
+              )}`}
+            >
+              {statusInfo[game.gameStatus] || game.gameStatusText}
+              {game.gameStatus === 2 && game.gameStatusText && ` - ${game.gameStatusText}`}
+            </span>
+            {/* Competitiveness Badge - Show for finished games */}
+            {game.gameStatus === 3 && game.competitiveness && game.competitiveness.icon && (
+              <span className="px-4 py-2 rounded-full text-sm font-semibold bg-[#181818]/50 text-white border border-[#2f3336]/50">
+                {game.competitiveness.label} {game.competitiveness.icon}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Teams */}
@@ -268,10 +276,141 @@ function GameDetails() {
         )}
       </div>
 
+      {/* Game MVP - Who Carried? */}
+      {game.boxscore?.gameMVP && (
+        <motion.div
+          className="bg-gradient-to-br from-[#16181c]/80 to-[#181818]/80 backdrop-blur-xl rounded-2xl border-2 border-[#1d9bf0]/30 p-6 mb-6 shadow-lg shadow-[#1d9bf0]/10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            主宰比赛
+          </h2>
+          <div className="flex items-center gap-4">
+            {game.boxscore.gameMVP.headshot && (
+              <img
+                src={game.boxscore.gameMVP.headshot}
+                alt={game.boxscore.gameMVP.name}
+                className="w-16 h-16 rounded-full object-cover border-2 border-[#1d9bf0]/50 flex-shrink-0"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            )}
+            <div className="flex-1">
+              <Link
+                to={`/players/${game.boxscore.gameMVP.athleteId}`}
+                className="block hover:text-[#1d9bf0] transition-colors"
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-2xl font-bold text-white">
+                    {game.boxscore.gameMVP.name}
+                  </h3>
+                  {game.boxscore.gameMVP.teamLogo && (
+                    <img
+                      src={game.boxscore.gameMVP.teamLogo}
+                      alt={game.boxscore.gameMVP.teamName}
+                      className="w-6 h-6 object-contain"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  )}
+                </div>
+              </Link>
+              <p className="text-[#71767a] text-sm mb-2">
+                {game.boxscore.gameMVP.jersey && `#${game.boxscore.gameMVP.jersey}`} {game.boxscore.gameMVP.position && `· ${game.boxscore.gameMVP.position}`} {game.boxscore.gameMVP.teamAbbreviation && `· ${game.boxscore.gameMVP.teamAbbreviation}`}
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-3xl font-bold text-[#1d9bf0]">
+                  {game.boxscore.gameMVP.gis}
+                </span>
+                <span className="text-sm text-[#71767a]">GIS</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <div className="text-xs text-[#71767a] mb-1">PTS</div>
+                <div className="text-lg font-bold text-white">{game.boxscore.gameMVP.stats.points}</div>
+              </div>
+              <div>
+                <div className="text-xs text-[#71767a] mb-1">REB</div>
+                <div className="text-lg font-bold text-white">{game.boxscore.gameMVP.stats.rebounds}</div>
+              </div>
+              <div>
+                <div className="text-xs text-[#71767a] mb-1">AST</div>
+                <div className="text-lg font-bold text-white">{game.boxscore.gameMVP.stats.assists}</div>
+              </div>
+              <div>
+                <div className="text-xs text-[#71767a] mb-1">STL</div>
+                <div className="text-lg font-bold text-white">{game.boxscore.gameMVP.stats.steals}</div>
+              </div>
+              <div>
+                <div className="text-xs text-[#71767a] mb-1">BLK</div>
+                <div className="text-lg font-bold text-white">{game.boxscore.gameMVP.stats.blocks}</div>
+              </div>
+              <div>
+                <div className="text-xs text-[#71767a] mb-1">TOV</div>
+                <div className="text-lg font-bold text-white">{game.boxscore.gameMVP.stats.turnovers}</div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Max Lead Card */}
+      {game.maxLead && (
+        <motion.div
+          className="bg-gradient-to-br from-[#16181c]/80 to-[#181818]/80 backdrop-blur-xl rounded-2xl border-2 border-[#2f3336]/50 p-6 mb-6 shadow-lg"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            最大领先
+          </h2>
+          <div className="flex items-center gap-4">
+            {game.maxLead.teamLogo && (
+              <img
+                src={game.maxLead.teamLogo}
+                alt={game.maxLead.teamName}
+                className="w-16 h-16 object-contain flex-shrink-0"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            )}
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-lg font-semibold text-white">
+                  {game.maxLead.teamName}
+                </h3>
+                {game.maxLead.teamAbbreviation && (
+                  <span className="text-sm text-[#71767a]">
+                    ({game.maxLead.teamAbbreviation})
+                  </span>
+                )}
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-[#1d9bf0]">
+                  {game.maxLead.points}
+                </span>
+                <span className="text-lg text-[#71767a]">分</span>
+              </div>
+              <p className="text-sm text-[#71767a] mt-2">
+                {game.maxLead.period <= 4 
+                  ? `Q${game.maxLead.period}` 
+                  : `OT${game.maxLead.period - 4}`}
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* Score by Period Table */}
       {game.awayTeam.periods && game.awayTeam.periods.length > 0 && (
         <div className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6 mb-6">
-          <h2 className="text-xl font-bold text-white mb-4">各节比分</h2>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
