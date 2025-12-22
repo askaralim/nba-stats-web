@@ -6,43 +6,7 @@ import GameCardSkeleton from '../components/GameCardSkeleton';
 import GameStatsSummary from '../components/GameStatsSummary';
 import { API_BASE_URL, USE_MOCK_DATA } from '../config';
 import { getMockGames } from '../utils/mockGameData';
-
-// Helper functions for game categorization
-const isOvertimeGame = (game) => {
-  return game.period > 4 || 
-         (game.gameStatusText && (
-           game.gameStatusText.toLowerCase().includes('ot') ||
-           game.gameStatusText.toLowerCase().includes('overtime')
-         ));
-};
-
-const getScoreDifference = (game) => {
-  // Works for both live and completed games
-  if (game.awayTeam?.score === null || game.homeTeam?.score === null) return null;
-  if (game.gameStatus === 1 && game.awayTeam.score === 0 && game.homeTeam.score === 0) return null; // Scheduled games
-  return Math.abs(game.awayTeam.score - game.homeTeam.score);
-};
-
-const isClosestGame = (game) => {
-  // Only consider live or finished games, not scheduled games
-  if (game.gameStatus === 1) {
-    return false;
-  }
-  const scoreDiff = getScoreDifference(game);
-  return scoreDiff !== null && scoreDiff <= 5;
-};
-
-const isMarqueeGame = (game) => {
-  // Check if game has marquee flag from backend
-  if (game.featuredReason === 'marquee' || game.isMarquee === true) {
-    return true;
-  }
-  // Fallback: check for GSW or common marquee teams
-  const awayAbbr = game.awayTeam?.teamTricode || game.awayTeam?.abbreviation || '';
-  const homeAbbr = game.homeTeam?.teamTricode || game.homeTeam?.abbreviation || '';
-  return awayAbbr.toUpperCase() === 'GSW' || homeAbbr.toUpperCase() === 'GSW' ||
-         awayAbbr.toUpperCase() === 'GS' || homeAbbr.toUpperCase() === 'GS';
-};
+import { getChineseDate, formatDateForAPI, formatDateForDisplay, isSameDay } from '../utils/dateUtils';
 
 function GamesToday() {
   const [games, setGames] = useState([]);
@@ -55,17 +19,6 @@ function GamesToday() {
     overtime: false,     // 加时
     marquee: false       // 热门
   });
-  
-  // Get current date in Chinese timezone
-  const getChineseDate = () => {
-    const now = new Date();
-    // Get date string in Chinese timezone (YYYY-MM-DD)
-    const chineseDateStr = now.toLocaleString('en-CA', { timeZone: 'Asia/Shanghai' }).split(',')[0];
-    // Parse the date string to create a date object
-    const [year, month, day] = chineseDateStr.split('-').map(Number);
-    // Create date at midnight in local timezone (represents the Chinese calendar date)
-    return new Date(year, month - 1, day);
-  };
   
   const [selectedDate, setSelectedDate] = useState(() => getChineseDate());
 
@@ -81,50 +34,6 @@ function GamesToday() {
   };
 
   const [dateRange, setDateRange] = useState(() => generateDateRange(getChineseDate()));
-
-  // Format date for API (YYYYMMDD) - ESPN API expects date in US Eastern timezone
-  // Convert Chinese date to US Eastern timezone date for API call
-  const formatDateForAPI = (chineseDate) => {
-    // Get the date components from Chinese date
-    const year = chineseDate.getFullYear();
-    const month = chineseDate.getMonth() + 1;
-    const day = chineseDate.getDate();
-    
-    // Create a date string in Chinese timezone format
-    const chineseDateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    
-    // Create a date object at midnight Chinese time (UTC+8)
-    // We represent this as a UTC date by subtracting 8 hours
-    const chineseMidnight = new Date(`${chineseDateStr}T00:00:00+08:00`);
-    
-    // Convert to US Eastern timezone
-    const usEasternDateStr = chineseMidnight.toLocaleString('en-CA', { 
-      timeZone: 'America/New_York',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    });
-    
-    // Convert to YYYYMMDD format
-    const [usYear, usMonth, usDay] = usEasternDateStr.split('-');
-    return `${usYear}${String(usMonth).padStart(2, '0')}${String(usDay).padStart(2, '0')}`;
-  };
-
-  // Format date for display in Chinese format (yyyy-mm-dd 星期X)
-  const formatDateForDisplay = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const weekday = date.toLocaleString('zh-CN', { weekday: 'long' });
-    return `${year}-${month}-${day} ${weekday}`;
-  };
-
-  // Check if two dates are the same day
-  const isSameDay = (date1, date2) => {
-    return date1.getFullYear() === date2.getFullYear() &&
-           date1.getMonth() === date2.getMonth() &&
-           date1.getDate() === date2.getDate();
-  };
 
   const fetchGames = useCallback(async (targetDate = null, isRefresh = false) => {
     try {
@@ -148,35 +57,8 @@ function GamesToday() {
       }
       const newGames = data.games || [];
 
-      // Sort games: Live → Closest → OT → Scheduled → Regular Finished
-      const sortGamesByStatus = (gamesList) => {
-        return [...gamesList].sort((a, b) => {
-          // Priority 1: Live games (status 2)
-          if (a.gameStatus === 2 && b.gameStatus !== 2) return -1;
-          if (a.gameStatus !== 2 && b.gameStatus === 2) return 1;
-          
-          // Priority 2: Closest games (finished with score diff <= 5)
-          const aIsClosest = isClosestGame(a);
-          const bIsClosest = isClosestGame(b);
-          if (aIsClosest && !bIsClosest) return -1;
-          if (!aIsClosest && bIsClosest) return 1;
-          
-          // Priority 3: OT games (finished with OT)
-          const aIsOT = isOvertimeGame(a);
-          const bIsOT = isOvertimeGame(b);
-          if (aIsOT && !bIsOT) return -1;
-          if (!aIsOT && bIsOT) return 1;
-          
-          // Priority 4: Scheduled games (status 1) come before regular finished
-          if (a.gameStatus === 1 && b.gameStatus === 3) return -1;
-          if (a.gameStatus === 3 && b.gameStatus === 1) return 1;
-          
-          // Within same priority, maintain original order
-          return 0;
-        });
-      };
-      
-      const sortedNewGames = sortGamesByStatus(newGames);
+      // Games are already sorted by backend - no need to sort again
+      const sortedNewGames = newGames;
       
       // If refreshing, merge updates to prevent unnecessary re-renders
       if (isRefresh && games.length > 0) {
@@ -197,8 +79,8 @@ function GamesToday() {
             }
           });
           
-          // Sort the merged games
-          return sortGamesByStatus(Array.from(gamesMap.values()));
+          // Games are already sorted by backend - return as is
+          return Array.from(gamesMap.values());
         });
       } else {
         setGames(sortedNewGames);
@@ -500,16 +382,10 @@ function GamesToday() {
           <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity ${loading && games.length > 0 ? 'opacity-50' : 'opacity-100'}`}>
           {games
             .filter((game) => {
-              // Apply filters
-              if (filters.closeGames) {
-                if (!isClosestGame(game)) return false;
-              }
-              if (filters.overtime) {
-                if (!isOvertimeGame(game)) return false;
-              }
-              if (filters.marquee) {
-                if (!isMarqueeGame(game)) return false;
-              }
+              // Use backend flags instead of frontend calculations
+              if (filters.closeGames && !game.isClosest) return false;
+              if (filters.overtime && !game.isOvertime) return false;
+              if (filters.marquee && !game.isMarquee) return false;
               return true;
             })
             .map((game) => (

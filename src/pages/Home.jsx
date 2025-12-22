@@ -5,38 +5,7 @@ import { motion } from 'framer-motion';
 import GameStatsSummary from '../components/GameStatsSummary';
 import { API_BASE_URL, USE_MOCK_DATA } from '../config';
 import { getMockGames, getMockHomeData } from '../utils/mockGameData';
-
-// Get current date in Chinese timezone
-const getChineseDate = () => {
-  const now = new Date();
-  const chineseDateStr = now.toLocaleString('en-CA', { timeZone: 'Asia/Shanghai' }).split(',')[0];
-  const [year, month, day] = chineseDateStr.split('-').map(Number);
-  return new Date(year, month - 1, day);
-};
-
-// Format date for API (YYYYMMDD)
-const formatDateForAPI = (chineseDate) => {
-  const year = chineseDate.getFullYear();
-  const month = chineseDate.getMonth() + 1;
-  const day = chineseDate.getDate();
-  const chineseDateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-  const chineseMidnight = new Date(`${chineseDateStr}T00:00:00+08:00`);
-  const usEasternDateStr = chineseMidnight.toLocaleString('en-CA', { 
-    timeZone: 'America/New_York',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  });
-  const [usYear, usMonth, usDay] = usEasternDateStr.split('-');
-  return `${usYear}${String(usMonth).padStart(2, '0')}${String(usDay).padStart(2, '0')}`;
-};
-
-// Get tomorrow's date
-const getTomorrowDate = () => {
-  const tomorrow = new Date(getChineseDate());
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  return tomorrow;
-};
+import { getChineseDate, formatDateForAPI, getTomorrowDate } from '../utils/dateUtils';
 
 // Loading component for individual widgets
 const LoadingSpinner = ({ size = 'small' }) => (

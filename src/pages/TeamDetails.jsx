@@ -147,126 +147,47 @@ function TeamDetails() {
         {/* Team Statistics Grid */}
         {teamStats && Object.keys(teamStats).length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {/* Points */}
-            {teamStats.avgPoints && (
-              <motion.div 
-                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
-                whileHover={{ scale: 1.02 }}
-              >
-                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgPoints}</div>
-                <div className="text-sm text-[#71767a]">得分</div>
-              </motion.div>
-            )}
-            {/* Rebounds */}
-            {teamStats.avgRebounds && (
-              <motion.div 
-                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
-                whileHover={{ scale: 1.02 }}
-              >
-                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgRebounds}</div>
-                <div className="text-sm text-[#71767a]">篮板</div>
-              </motion.div>
-            )}
-            {/* Assists */}
-            {teamStats.avgAssists && (
-              <motion.div 
-                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
-                whileHover={{ scale: 1.02 }}
-              >
-                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgAssists}</div>
-                <div className="text-sm text-[#71767a]">助攻</div>
-              </motion.div>
-            )}
-            {/* Steals */}
-            {teamStats.avgSteals && (
-              <motion.div 
-                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
-                whileHover={{ scale: 1.02 }}
-              >
-                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgSteals}</div>
-                <div className="text-sm text-[#71767a]">抢断</div>
-              </motion.div>
-            )}
-            {/* Blocks */}
-            {teamStats.avgBlocks && (
-              <motion.div 
-                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
-                whileHover={{ scale: 1.02 }}
-              >
-                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgBlocks}</div>
-                <div className="text-sm text-[#71767a]">封盖</div>
-              </motion.div>
-            )}
-            {/* Field Goal % */}
-            {teamStats.fieldGoalPct && (
-              <motion.div 
-                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
-                whileHover={{ scale: 1.02 }}
-              >
-                <div className="text-3xl font-bold text-white mb-2">{teamStats.fieldGoalPct}%</div>
-                <div className="text-sm text-[#71767a]">投篮命中率</div>
-              </motion.div>
-            )}
-            {/* 3-Point Attempts */}
-            {/* {teamStats.avgThreePointFieldGoalsAttempted && (
-              <motion.div 
-                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
-                whileHover={{ scale: 1.02 }}
-              >
-                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgThreePointFieldGoalsAttempted}</div>
-                <div className="text-sm text-[#71767a]">三分出手数</div>
-              </motion.div>
-            )} */}
-            {/* 3-Point Makes */}
-            {/* {teamStats.avgThreePointFieldGoalsMade && (
-              <motion.div 
-                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
-                whileHover={{ scale: 1.02 }}
-              >
-                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgThreePointFieldGoalsMade}</div>
-                <div className="text-sm text-[#71767a]">三分命中数</div>
-              </motion.div>
-            )} */}
-            {/* 3-Point % */}
-            {teamStats.threePointPct && (
-              <motion.div 
-                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
-                whileHover={{ scale: 1.02 }}
-              >
-                <div className="text-3xl font-bold text-white mb-2">{teamStats.threePointPct}%</div>
-                <div className="text-sm text-[#71767a]">三分命中率</div>
-              </motion.div>
-            )}
-            {/* Free Throw Attempts */}
-            {/* {teamStats.avgFreeThrowsAttempted && (
-              <motion.div 
-                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
-                whileHover={{ scale: 1.02 }}
-              >
-                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgFreeThrowsAttempted}</div>
-                <div className="text-sm text-[#71767a]">罚球数</div>
-              </motion.div>
-            )} */}
-            {/* Free Throw % */}
-            {teamStats.freeThrowPct && (
-              <motion.div 
-                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
-                whileHover={{ scale: 1.02 }}
-              >
-                <div className="text-3xl font-bold text-white mb-2">{teamStats.freeThrowPct}%</div>
-                <div className="text-sm text-[#71767a]">罚球命中率</div>
-              </motion.div>
-            )}
-            {/* Turnovers */}
-            {teamStats.avgTurnovers && (
-              <motion.div 
-                className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
-                whileHover={{ scale: 1.02 }}
-              >
-                <div className="text-3xl font-bold text-white mb-2">{teamStats.avgTurnovers}</div>
-                <div className="text-sm text-[#71767a]">失误</div>
-              </motion.div>
-            )}
+            {/* Helper function to render stat card with ranking */}
+            {(() => {
+              const StatCard = ({ statValue, label, isPercentage = false }) => {
+                if (!statValue) return null;
+                
+                const value = typeof statValue === 'object' ? statValue.value : statValue;
+                const rank = typeof statValue === 'object' ? statValue.rank : null;
+                const displayValue = isPercentage ? `${value}%` : value;
+
+                return (
+                  <motion.div 
+                    className="bg-gradient-to-br from-[#0f1114] to-[#16181c] rounded-xl border border-[#2f3336]/40 p-5 hover:border-[#1d9bf0]/30 hover:shadow-lg hover:shadow-[#1d9bf0]/10 transition-all duration-200"
+                    whileHover={{ scale: 1.02 }}
+                  >
+                    <div className="text-3xl font-bold text-white mb-2">{displayValue}</div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm text-[#71767a]">{label}</div>
+                      {rank && (
+                        <div className="text-xs text-[#1d9bf0]">
+                          #{rank}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              };
+              
+              return (
+                <>
+                  <StatCard statValue={teamStats.avgPoints} label="得分" />
+                  <StatCard statValue={teamStats.avgRebounds} label="篮板" />
+                  <StatCard statValue={teamStats.avgAssists} label="助攻" />
+                  <StatCard statValue={teamStats.avgSteals} label="抢断" />
+                  <StatCard statValue={teamStats.avgBlocks} label="封盖" />
+                  <StatCard statValue={teamStats.fieldGoalPct} label="投篮命中率" isPercentage={true} />
+                  <StatCard statValue={teamStats.threePointPct} label="三分命中率" isPercentage={true} />
+                  <StatCard statValue={teamStats.freeThrowPct} label="罚球命中率" isPercentage={true} />
+                  <StatCard statValue={teamStats.avgTurnovers} label="失误" />
+                </>
+              );
+            })()}
             {/* Assist/Turnover Ratio */}
             {/* {teamStats.assistTurnoverRatio && (
               <motion.div 
