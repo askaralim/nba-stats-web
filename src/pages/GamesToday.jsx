@@ -7,10 +7,54 @@ import GameStatsSummary from '../components/GameStatsSummary';
 import { API_BASE_URL, USE_MOCK_DATA } from '../config';
 import { getMockGames } from '../utils/mockGameData';
 
+// Helper functions for game categorization
+const isOvertimeGame = (game) => {
+  return game.period > 4 || 
+         (game.gameStatusText && (
+           game.gameStatusText.toLowerCase().includes('ot') ||
+           game.gameStatusText.toLowerCase().includes('overtime')
+         ));
+};
+
+const getScoreDifference = (game) => {
+  // Works for both live and completed games
+  if (game.awayTeam?.score === null || game.homeTeam?.score === null) return null;
+  if (game.gameStatus === 1 && game.awayTeam.score === 0 && game.homeTeam.score === 0) return null; // Scheduled games
+  return Math.abs(game.awayTeam.score - game.homeTeam.score);
+};
+
+const isClosestGame = (game) => {
+  // Only consider live or finished games, not scheduled games
+  if (game.gameStatus === 1) {
+    return false;
+  }
+  const scoreDiff = getScoreDifference(game);
+  return scoreDiff !== null && scoreDiff <= 5;
+};
+
+const isMarqueeGame = (game) => {
+  // Check if game has marquee flag from backend
+  if (game.featuredReason === 'marquee' || game.isMarquee === true) {
+    return true;
+  }
+  // Fallback: check for GSW or common marquee teams
+  const awayAbbr = game.awayTeam?.teamTricode || game.awayTeam?.abbreviation || '';
+  const homeAbbr = game.homeTeam?.teamTricode || game.homeTeam?.abbreviation || '';
+  return awayAbbr.toUpperCase() === 'GSW' || homeAbbr.toUpperCase() === 'GSW' ||
+         awayAbbr.toUpperCase() === 'GS' || homeAbbr.toUpperCase() === 'GS';
+};
+
 function GamesToday() {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Filter toggles
+  const [filters, setFilters] = useState({
+    closeGames: false,  // 焦灼
+    overtime: false,     // 加时
+    marquee: false       // 热门
+  });
   
   // Get current date in Chinese timezone
   const getChineseDate = () => {
@@ -103,26 +147,6 @@ function GamesToday() {
         data = await response.json();
       }
       const newGames = data.games || [];
-      
-      // Helper functions for game categorization
-      const isOvertimeGame = (game) => {
-        return game.period > 4 || 
-               (game.gameStatusText && (
-                 game.gameStatusText.toLowerCase().includes('ot') ||
-                 game.gameStatusText.toLowerCase().includes('overtime')
-               ));
-      };
-
-      const getScoreDifference = (game) => {
-        if (game.gameStatus !== 3) return null; // Only for completed games
-        if (game.awayTeam?.score === null || game.homeTeam?.score === null) return null;
-        return Math.abs(game.awayTeam.score - game.homeTeam.score);
-      };
-
-      const isClosestGame = (game) => {
-        const scoreDiff = getScoreDifference(game);
-        return scoreDiff !== null && scoreDiff <= 5;
-      };
 
       // Sort games: Live → Closest → OT → Scheduled → Regular Finished
       const sortGamesByStatus = (gamesList) => {
@@ -414,6 +438,49 @@ function GamesToday() {
         <GameStatsSummary games={games} />
       )}
 
+      {/* Filter Toggles */}
+      {!loading && games.length > 0 && (
+        <div className="mb-6 flex items-center gap-3 flex-wrap">
+          <span className="text-sm text-[#71767a] font-medium">筛选:</span>
+          
+          {/* Close Games Filter */}
+          <button
+            onClick={() => setFilters(prev => ({ ...prev, closeGames: !prev.closeGames }))}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              filters.closeGames
+                ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                : 'bg-[#181818]/50 text-[#71767a] border border-[#2f3336]/30 hover:bg-[#181818] hover:text-white'
+            }`}
+          >
+            焦灼
+          </button>
+
+          {/* OT Filter */}
+          <button
+            onClick={() => setFilters(prev => ({ ...prev, overtime: !prev.overtime }))}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              filters.overtime
+                ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
+                : 'bg-[#181818]/50 text-[#71767a] border border-[#2f3336]/30 hover:bg-[#181818] hover:text-white'
+            }`}
+          >
+            加时
+          </button>
+
+          {/* Marquee Filter */}
+          <button
+            onClick={() => setFilters(prev => ({ ...prev, marquee: !prev.marquee }))}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              filters.marquee
+                ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
+                : 'bg-[#181818]/50 text-[#71767a] border border-[#2f3336]/30 hover:bg-[#181818] hover:text-white'
+            }`}
+          >
+            热门
+          </button>
+        </div>
+      )}
+
       {games.length === 0 && !loading ? (
         <div className="bg-[#16181c] rounded-xl border border-[#2f3336] p-12 text-center">
           <p className="text-white text-lg">
@@ -431,9 +498,23 @@ function GamesToday() {
             </div>
           )}
           <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity ${loading && games.length > 0 ? 'opacity-50' : 'opacity-100'}`}>
-          {games.map((game) => (
-            <GameCard key={game.gameId} game={game} />
-          ))}
+          {games
+            .filter((game) => {
+              // Apply filters
+              if (filters.closeGames) {
+                if (!isClosestGame(game)) return false;
+              }
+              if (filters.overtime) {
+                if (!isOvertimeGame(game)) return false;
+              }
+              if (filters.marquee) {
+                if (!isMarqueeGame(game)) return false;
+              }
+              return true;
+            })
+            .map((game) => (
+              <GameCard key={game.gameId} game={game} />
+            ))}
           </div>
         </div>
       )}

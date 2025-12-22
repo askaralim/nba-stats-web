@@ -555,8 +555,7 @@ function Home() {
         >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <span>📊</span>
-            今日 Top3!
+            今日 Top 3!
           </h2>
         </div>
         {loadingStates.leagueLeaders ? (
@@ -567,7 +566,6 @@ function Home() {
           {leagueLeaders.points && Array.isArray(leagueLeaders.points) && leagueLeaders.points.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-[#71767a] mb-2 flex items-center gap-2">
-                <span>🏀</span>
                 得分
               </h3>
               <div className="space-y-2">
@@ -620,7 +618,6 @@ function Home() {
           {leagueLeaders.rebounds && Array.isArray(leagueLeaders.rebounds) && leagueLeaders.rebounds.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-[#71767a] mb-2 flex items-center gap-2">
-                <span>📊</span>
                 篮板
               </h3>
               <div className="space-y-2">
@@ -673,7 +670,6 @@ function Home() {
           {leagueLeaders.assists && Array.isArray(leagueLeaders.assists) && leagueLeaders.assists.length > 0 && (
             <div>
               <h3 className="text-sm font-semibold text-[#71767a] mb-2 flex items-center gap-2">
-                <span>🎯</span>
                 助攻
               </h3>
               <div className="space-y-2">
@@ -727,7 +723,7 @@ function Home() {
            (!leagueLeaders.rebounds || !Array.isArray(leagueLeaders.rebounds) || leagueLeaders.rebounds.length === 0) &&
            (!leagueLeaders.assists || !Array.isArray(leagueLeaders.assists) || leagueLeaders.assists.length === 0) && (
             <div className="text-center py-8">
-              <p className="text-[#71767a]">今日暂无比赛数据</p>
+              <p className="text-[#71767a]">暂无比赛数据</p>
             </div>
           )}
         </div>
@@ -743,7 +739,6 @@ function Home() {
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <span>⭐</span>
               赛季 Top 3!
             </h2>
             <Link
