@@ -85,12 +85,12 @@ function GameDetails() {
   }, [game, fetchAiSummary]);
 
   useEffect(() => {
-    // Auto-refresh every 2 seconds if game is live
+    // Auto-refresh every 5 seconds if game is live
     if (game?.gameStatus !== 2) return;
 
     const interval = setInterval(() => {
       fetchGameDetails(true); // Pass isRefresh=true to prevent full reload
-    }, 2000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [game?.gameStatus, fetchGameDetails]);

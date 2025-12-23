@@ -100,13 +100,13 @@ function GamesToday() {
   }, [selectedDate, fetchGames]);
 
   useEffect(() => {
-    // Auto-refresh every 2 seconds if there are live games
+    // Auto-refresh every 5 seconds if there are live games
     const hasLiveGames = games.some(game => game.gameStatus === 2);
     if (!hasLiveGames) return;
 
     const interval = setInterval(() => {
       fetchGames(null, true); // Pass isRefresh=true to prevent full reload
-    }, 2000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, [games, fetchGames]);
