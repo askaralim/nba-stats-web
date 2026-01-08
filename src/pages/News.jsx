@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { API_BASE_URL } from '../config';
+import { apiGet, getErrorMessage } from '../utils/api';
 
 /**
  * Format timestamp to human-friendly format
@@ -81,15 +81,11 @@ function News() {
         setLoading(true);
         
         console.log('Fetching news from API...');
-        const response = await fetch(`${API_BASE_URL}/api/nba/news`);
-        if (!response.ok) {
-          throw new Error('加载新闻失败');
-        }
-        const data = await response.json();
+        const data = await apiGet('/api/nba/news');
         console.log(`Received ${data.tweets?.length || 0} tweets`);
         setTweets(data.tweets || []);
       } catch (err) {
-        setError(err.message);
+        setError(getErrorMessage(err) || '加载新闻失败');
         console.error('Error fetching news:', err);
       } finally {
         setLoading(false);

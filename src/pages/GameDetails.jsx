@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
-import { API_BASE_URL } from '../config';
+import { apiGet, getErrorMessage } from '../utils/api';
 
 function GameDetails() {
   const { gameId } = useParams();
@@ -25,11 +25,7 @@ function GameDetails() {
       if (!isRefresh) {
         setLoading(true);
       }
-      const response = await fetch(`${API_BASE_URL}/api/nba/games/${gameId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch game details');
-      }
-      const data = await response.json();
+      const data = await apiGet(`/api/nba/games/${gameId}`);
       
       // If refreshing, only update if data changed to prevent unnecessary re-renders
       if (isRefresh && gameRef.current) {
@@ -38,10 +34,10 @@ function GameDetails() {
           setGame(data);
         }
       } else {
-      setGame(data);
+        setGame(data);
       }
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err) || 'Failed to fetch game details');
       console.error('Error fetching game details:', err);
     } finally {
       if (!isRefresh) {
@@ -64,14 +60,10 @@ function GameDetails() {
     setSummaryError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/nba/games/${gameId}/summary`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch AI summary');
-      }
-      const data = await response.json();
+      const data = await apiGet(`/api/nba/games/${gameId}/summary`);
       setAiSummary(data);
     } catch (err) {
-      setSummaryError(err.message);
+      setSummaryError(getErrorMessage(err) || 'Failed to fetch AI summary');
       console.error('Error fetching AI summary:', err);
     } finally {
       setSummaryLoading(false);
@@ -236,12 +228,12 @@ function GameDetails() {
           {/* Away Team */}
           <div className="text-center">
             <Link
-              to={`/teams/${game.awayTeam.teamTricode?.toLowerCase() || game.awayTeam.teamId}`}
+              to={`/teams/${(game.awayTeam.abbreviation || game.awayTeam.teamTricode)?.toLowerCase() || game.awayTeam.id || game.awayTeam.teamId}`}
               className="block hover:opacity-80 transition-opacity"
             >
             <img
               src={game.awayTeam.logo}
-              alt={game.awayTeam.teamName}
+              alt={game.awayTeam.name || game.awayTeam.teamName}
                 className="w-24 h-24 mx-auto mb-4 object-contain cursor-pointer"
               onError={(e) => {
                 e.target.style.display = 'none';
@@ -249,11 +241,11 @@ function GameDetails() {
             />
             </Link>
             <Link
-              to={`/teams/${game.awayTeam.teamTricode?.toLowerCase() || game.awayTeam.teamId}`}
+              to={`/teams/${(game.awayTeam.abbreviation || game.awayTeam.teamTricode)?.toLowerCase() || game.awayTeam.id || game.awayTeam.teamId}`}
               className="block hover:text-[#1d9bf0] transition-colors"
             >
               <h2 className="text-xl font-bold text-white mb-1">
-              {game.awayTeam.teamCity} {game.awayTeam.teamName}
+              {game.awayTeam.city || game.awayTeam.teamCity} {game.awayTeam.name || game.awayTeam.teamName}
             </h2>
             </Link>
             <p className="text-[#71767a] mb-2">
@@ -276,12 +268,12 @@ function GameDetails() {
           {/* Home Team */}
           <div className="text-center">
             <Link
-              to={`/teams/${game.homeTeam.teamTricode?.toLowerCase() || game.homeTeam.teamId}`}
+              to={`/teams/${(game.homeTeam.abbreviation || game.homeTeam.teamTricode)?.toLowerCase() || game.homeTeam.id || game.homeTeam.teamId}`}
               className="block hover:opacity-80 transition-opacity"
             >
             <img
               src={game.homeTeam.logo}
-              alt={game.homeTeam.teamName}
+              alt={game.homeTeam.name || game.homeTeam.teamName}
                 className="w-24 h-24 mx-auto mb-4 object-contain cursor-pointer"
               onError={(e) => {
                 e.target.style.display = 'none';
@@ -289,11 +281,11 @@ function GameDetails() {
             />
             </Link>
             <Link
-              to={`/teams/${game.homeTeam.teamTricode?.toLowerCase() || game.homeTeam.teamId}`}
+              to={`/teams/${(game.homeTeam.abbreviation || game.homeTeam.teamTricode)?.toLowerCase() || game.homeTeam.id || game.homeTeam.teamId}`}
               className="block hover:text-[#1d9bf0] transition-colors"
             >
               <h2 className="text-xl font-bold text-white mb-1">
-              {game.homeTeam.teamCity} {game.homeTeam.teamName}
+              {game.homeTeam.city || game.homeTeam.teamCity} {game.homeTeam.name || game.homeTeam.teamName}
             </h2>
             </Link>
             <p className="text-[#71767a] mb-2">
@@ -502,10 +494,10 @@ function GameDetails() {
                 <tr className="border-b border-[#2f3336]">
                   <td className="py-3 px-4 font-medium text-white">
                     <Link
-                      to={`/teams/${game.awayTeam.teamTricode?.toLowerCase() || game.awayTeam.teamId}`}
+                      to={`/teams/${(game.awayTeam.abbreviation || game.awayTeam.teamTricode)?.toLowerCase() || game.awayTeam.id || game.awayTeam.teamId}`}
                       className="hover:text-[#1d9bf0] transition-colors"
                     >
-                    {game.awayTeam.teamTricode}
+                    {game.awayTeam.abbreviation || game.awayTeam.teamTricode}
                     </Link>
                   </td>
                   {game.awayTeam.periods.map((period, idx) => (
@@ -520,10 +512,10 @@ function GameDetails() {
                 <tr>
                   <td className="py-3 px-4 font-medium text-white">
                     <Link
-                      to={`/teams/${game.homeTeam.teamTricode?.toLowerCase() || game.homeTeam.teamId}`}
+                      to={`/teams/${(game.homeTeam.abbreviation || game.homeTeam.teamTricode)?.toLowerCase() || game.homeTeam.id || game.homeTeam.teamId}`}
                       className="hover:text-[#1d9bf0] transition-colors"
                     >
-                    {game.homeTeam.teamTricode}
+                    {game.homeTeam.abbreviation || game.homeTeam.teamTricode}
                     </Link>
                   </td>
                   {game.homeTeam.periods.map((period, idx) => (
@@ -579,7 +571,7 @@ function GameDetails() {
                         {game.boxscore.gameMVP.teamLogo && (
                           <img
                             src={game.boxscore.gameMVP.teamLogo}
-                            alt={game.boxscore.gameMVP.teamName}
+                            alt={game.boxscore.gameMVP.teamName || game.boxscore.gameMVP.name}
                             className="w-6 h-6 object-contain"
                             onError={(e) => {
                               e.target.style.display = 'none';
@@ -589,7 +581,7 @@ function GameDetails() {
                       </div>
                     </Link>
                     <p className="text-[#71767a] text-sm mb-2">
-                      {game.boxscore.gameMVP.jersey && `#${game.boxscore.gameMVP.jersey}`} {game.boxscore.gameMVP.position && `· ${game.boxscore.gameMVP.position}`} {game.boxscore.gameMVP.teamAbbreviation && `· ${game.boxscore.gameMVP.teamAbbreviation}`}
+                      {game.boxscore.gameMVP.jersey && `#${game.boxscore.gameMVP.jersey}`} {game.boxscore.gameMVP.position && `· ${game.boxscore.gameMVP.position}`} {(game.boxscore.gameMVP.teamAbbreviation || game.boxscore.gameMVP.abbreviation) && `· ${game.boxscore.gameMVP.teamAbbreviation || game.boxscore.gameMVP.abbreviation}`}
                     </p>
                     <div className="flex items-center gap-2">
                       <span className="text-3xl font-bold text-[#1d9bf0]">
@@ -641,14 +633,14 @@ function GameDetails() {
                       {game.boxscore.teams[0]?.teamLogo && (
                         <img
                           src={game.boxscore.teams[0].teamLogo}
-                          alt={game.boxscore.teams[0].teamName}
+                          alt={game.boxscore.teams[0].teamName || game.boxscore.teams[0].name}
                           className="w-5 h-5 object-contain"
                           onError={(e) => {
                             e.target.style.display = 'none';
                           }}
                         />
                       )}
-                      <span className="truncate">{game.boxscore.teams[0]?.teamName || 'Team 1'}</span>
+                      <span className="truncate">{game.boxscore.teams[0]?.teamName || game.boxscore.teams[0]?.name || 'Team 1'}</span>
                     </h3>
                     
                     {/* Points */}
@@ -736,14 +728,14 @@ function GameDetails() {
                       {game.boxscore.teams[1]?.teamLogo && (
                         <img
                           src={game.boxscore.teams[1].teamLogo}
-                          alt={game.boxscore.teams[1].teamName}
+                          alt={game.boxscore.teams[1].teamName || game.boxscore.teams[1].name}
                           className="w-5 h-5 object-contain"
                           onError={(e) => {
                             e.target.style.display = 'none';
                           }}
                         />
                       )}
-                      <span className="truncate">{game.boxscore.teams[1]?.teamName || 'Team 2'}</span>
+                      <span className="truncate">{game.boxscore.teams[1]?.teamName || game.boxscore.teams[1]?.name || 'Team 2'}</span>
                     </h3>
                     
                     {/* Points */}
@@ -943,25 +935,25 @@ function GameDetails() {
                 {team1.teamLogo && (
                   <img
                     src={team1.teamLogo}
-                    alt={team1.teamName}
+                    alt={team1.teamName || team1.name}
                     className="w-8 h-8 object-contain"
                     onError={(e) => { e.target.style.display = 'none'; }}
                   />
                 )}
                 <div>
-                  <div className="text-sm font-semibold text-white">{team1.teamAbbreviation}</div>
-                  <div className="text-xs text-[#71767a]">{team1.teamName}</div>
+                  <div className="text-sm font-semibold text-white">{team1.teamAbbreviation || team1.abbreviation}</div>
+                  <div className="text-xs text-[#71767a]">{team1.teamName || team1.name}</div>
                 </div>
               </div>
               <div className="flex items-center gap-3 flex-1 justify-end">
                 <div className="text-right">
-                  <div className="text-sm font-semibold text-white">{team2.teamAbbreviation}</div>
-                  <div className="text-xs text-[#71767a]">{team2.teamName}</div>
+                  <div className="text-sm font-semibold text-white">{team2.teamAbbreviation || team2.abbreviation}</div>
+                  <div className="text-xs text-[#71767a]">{team2.teamName || team2.name}</div>
                 </div>
                 {team2.teamLogo && (
                   <img
                     src={team2.teamLogo}
-                    alt={team2.teamName}
+                    alt={team2.teamName || team2.name}
                     className="w-8 h-8 object-contain"
                     onError={(e) => { e.target.style.display = 'none'; }}
                   />
@@ -1095,23 +1087,23 @@ function GameDetails() {
         <div className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6">
           <h2 className="text-xl font-bold text-white mb-4">球员数据</h2>
           {game.boxscore.teams.map((team, teamIndex) => (
-            <div key={team.teamId} className={teamIndex > 0 ? 'mt-8' : ''}>
+            <div key={team.teamId || team.id} className={teamIndex > 0 ? 'mt-8' : ''}>
               {/* Team Header */}
               <div className="flex items-center mb-4">
                 <Link
-                  to={`/teams/${team.teamAbbreviation?.toLowerCase() || team.teamId}`}
+                  to={`/teams/${(team.teamAbbreviation || team.abbreviation)?.toLowerCase() || team.teamId || team.id}`}
                   className="flex items-center hover:opacity-80 transition-opacity"
                 >
                   <img
-                    src={team.teamLogo}
-                    alt={team.teamName}
+                    src={team.teamLogo || team.logo}
+                    alt={team.teamName || team.name}
                     className="w-8 h-8 object-contain mr-3 cursor-pointer"
                     onError={(e) => {
                       e.target.style.display = 'none';
                     }}
                   />
                   <h3 className="text-lg font-bold text-white hover:text-[#1d9bf0] transition-colors cursor-pointer">
-                    {team.teamName}
+                    {team.teamName || team.name}
                   </h3>
                 </Link>
               </div>
@@ -1338,7 +1330,7 @@ function GameDetails() {
                   {game.awayTeam.logo && (
                     <img
                       src={game.awayTeam.logo}
-                      alt={game.awayTeam.teamName}
+                      alt={game.awayTeam.teamName || game.awayTeam.name}
                       className="w-6 h-6 object-contain"
                       onError={(e) => {
                         e.target.style.display = 'none';
@@ -1346,7 +1338,7 @@ function GameDetails() {
                     />
                   )}
                   <h3 className="text-sm font-semibold text-white">
-                    {game.awayTeam.teamTricode}
+                    {game.awayTeam.abbreviation || game.awayTeam.teamTricode}
                   </h3>
                 </div>
                 <div className="space-y-2">
@@ -1397,7 +1389,7 @@ function GameDetails() {
                   {game.homeTeam.logo && (
                     <img
                       src={game.homeTeam.logo}
-                      alt={game.homeTeam.teamName}
+                      alt={game.homeTeam.teamName || game.homeTeam.name}
                       className="w-6 h-6 object-contain"
                       onError={(e) => {
                         e.target.style.display = 'none';
@@ -1405,7 +1397,7 @@ function GameDetails() {
                     />
                   )}
                   <h3 className="text-sm font-semibold text-white">
-                    {game.homeTeam.teamTricode}
+                    {game.homeTeam.abbreviation || game.homeTeam.teamTricode}
                   </h3>
                 </div>
                 <div className="space-y-2">

@@ -4,9 +4,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GameCard from '../components/GameCard';
 import GameCardSkeleton from '../components/GameCardSkeleton';
 import GameStatsSummary from '../components/GameStatsSummary';
-import { API_BASE_URL, USE_MOCK_DATA } from '../config';
+import { USE_MOCK_DATA } from '../config';
 import { getMockGames } from '../utils/mockGameData';
 import { getChineseDate, formatDateForAPI, formatDateForDisplay, isSameDay } from '../utils/dateUtils';
+import { apiGet, getErrorMessage } from '../utils/api';
 
 function GamesToday() {
   const [games, setGames] = useState([]);
@@ -49,11 +50,13 @@ function GamesToday() {
         // Use mock data for local testing
         data = await getMockGames(dateParam);
       } else {
-        const response = await fetch(`${API_BASE_URL}/api/nba/games/today?date=${dateParam}`);
-        if (!response.ok) {
-          throw new Error('加载比赛失败');
-        }
-        data = await response.json();
+        // Build query params with filters
+        const params = { date: dateParam };
+        if (filters.closeGames) params.closeGames = 'true';
+        if (filters.overtime) params.overtime = 'true';
+        if (filters.marquee) params.marquee = 'true';
+        
+        data = await apiGet('/api/nba/games/today', params);
       }
       const newGames = data.games || [];
 
@@ -86,7 +89,7 @@ function GamesToday() {
         setGames(sortedNewGames);
       }
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err) || '加载比赛失败');
       console.error('Error fetching games:', err);
     } finally {
       if (!isRefresh) {

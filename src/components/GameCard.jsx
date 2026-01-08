@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 
 const GameCard = memo(function GameCard({ game }) {
   // Team color mapping for left border
-  const getTeamColor = (teamAbbreviation) => {
+  const getTeamColor = (teamAbbreviation) => { // Supports both abbreviation and teamAbbreviation
     const colors = {
       'ATL': '#E03A3E', 'BOS': '#007A33', 'BKN': '#000000', 'CHA': '#1D1160',
       'CHI': '#CE1141', 'CLE': '#860038', 'DAL': '#00538C', 'DEN': '#0E2240',
@@ -76,7 +76,11 @@ const GameCard = memo(function GameCard({ game }) {
   };
 
   // Get primary team color for border (use away team or home team)
-  const primaryColor = getTeamColor(game.awayTeam.abbreviation || game.homeTeam.abbreviation);
+  // Support both old and new field names during migration
+  const primaryColor = getTeamColor(
+    game.awayTeam.abbreviation || game.awayTeam.teamTricode || game.awayTeam.teamAbbreviation ||
+    game.homeTeam.abbreviation || game.homeTeam.teamTricode || game.homeTeam.teamAbbreviation
+  );
 
   return (
     <motion.div
@@ -150,7 +154,7 @@ const GameCard = memo(function GameCard({ game }) {
                   <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center bg-[#181818]/50 rounded-xl p-2 border border-[#2f3336]/50 backdrop-blur-sm">
               <img
                 src={game.awayTeam.logo}
-                alt={game.awayTeam.teamName}
+                alt={game.awayTeam.name || game.awayTeam.teamName}
                       className="w-full h-full object-contain"
                 onError={(e) => {
                   e.target.style.display = 'none';
@@ -159,7 +163,7 @@ const GameCard = memo(function GameCard({ game }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-white text-lg truncate">
-                  {game.awayTeam.teamCity} {game.awayTeam.teamName}
+                  {game.awayTeam.city || game.awayTeam.teamCity} {game.awayTeam.name || game.awayTeam.teamName}
                 </div>
                     <div className="text-sm text-[#71767a] mt-0.5">
                   {game.awayTeam.wins}-{game.awayTeam.losses}
@@ -200,7 +204,7 @@ const GameCard = memo(function GameCard({ game }) {
                   <div className="flex-shrink-0 w-16 h-16 flex items-center justify-center bg-[#181818]/50 rounded-xl p-2 border border-[#2f3336]/50 backdrop-blur-sm">
               <img
                 src={game.homeTeam.logo}
-                alt={game.homeTeam.teamName}
+                alt={game.homeTeam.name || game.homeTeam.teamName}
                       className="w-full h-full object-contain"
                 onError={(e) => {
                   e.target.style.display = 'none';
@@ -209,7 +213,7 @@ const GameCard = memo(function GameCard({ game }) {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-bold text-white text-lg truncate">
-                  {game.homeTeam.teamCity} {game.homeTeam.teamName}
+                  {game.homeTeam.city || game.homeTeam.teamCity} {game.homeTeam.name || game.homeTeam.teamName}
                 </div>
                     <div className="text-sm text-[#71767a] mt-0.5">
                   {game.homeTeam.wins}-{game.homeTeam.losses}

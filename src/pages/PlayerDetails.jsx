@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
-import { API_BASE_URL } from '../config';
+import { apiGet, getErrorMessage } from '../utils/api';
 
 function PlayerDetails() {
   const { playerId } = useParams();
@@ -22,12 +22,12 @@ function PlayerDetails() {
         setLoading(true);
         
         const [details, bio, currentStats, regularStats, advancedStatsData, gameLog] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/nba/players/${playerId}`).then(r => r.ok ? r.json() : null),
-          fetch(`${API_BASE_URL}/api/nba/players/${playerId}/bio`).then(r => r.ok ? r.json() : null),
-          fetch(`${API_BASE_URL}/api/nba/players/${playerId}/stats/current`).then(r => r.ok ? r.json() : null),
-          fetch(`${API_BASE_URL}/api/nba/players/${playerId}/stats`).then(r => r.ok ? r.json() : null),
-          fetch(`${API_BASE_URL}/api/nba/players/${playerId}/stats/advanced`).then(r => r.ok ? r.json() : null),
-          fetch(`${API_BASE_URL}/api/nba/players/${playerId}/gamelog`).then(r => r.ok ? r.json() : null)
+          apiGet(`/api/nba/players/${playerId}`).catch(() => null),
+          apiGet(`/api/nba/players/${playerId}/bio`).catch(() => null),
+          apiGet(`/api/nba/players/${playerId}/stats/current`).catch(() => null),
+          apiGet(`/api/nba/players/${playerId}/stats`).catch(() => null),
+          apiGet(`/api/nba/players/${playerId}/stats/advanced`).catch(() => null),
+          apiGet(`/api/nba/players/${playerId}/gamelog`).catch(() => null)
         ]);
 
         setPlayerDetails(details);

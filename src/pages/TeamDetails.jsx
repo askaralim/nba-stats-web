@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
-import { API_BASE_URL } from '../config';
+import { apiGet, getErrorMessage } from '../utils/api';
 
 function TeamDetails() {
   const { teamAbbreviation } = useParams();
@@ -18,31 +18,28 @@ function TeamDetails() {
         setError(null);
         setLoading(true);
         
-        // Fetch all data in parallel using clean endpoints
-        const [teamResponse, leadersResponse, recentGamesResponse] = await Promise.all([
-          fetch(`${API_BASE_URL}/api/nba/teams/${teamAbbreviation}`),
-          fetch(`${API_BASE_URL}/api/nba/teams/${teamAbbreviation}/leaders`).catch(() => null),
-          fetch(`${API_BASE_URL}/api/nba/teams/${teamAbbreviation}/recent-games?seasontype=2`).catch(() => null)
+        // Fetch all data in parallel using apiGet utility
+        const [teamDataResult, leadersResult, recentGamesResult] = await Promise.allSettled([
+          apiGet(`/api/nba/teams/${teamAbbreviation}`),
+          apiGet(`/api/nba/teams/${teamAbbreviation}/leaders`).catch(() => null),
+          apiGet(`/api/nba/teams/${teamAbbreviation}/recent-games`, { seasontype: '2' }).catch(() => null)
         ]);
         
-        if (!teamResponse.ok) {
-          throw new Error('加载球队详情失败');
+        if (teamDataResult.status === 'fulfilled') {
+          setTeamData(teamDataResult.value);
+        } else {
+          throw teamDataResult.reason;
         }
         
-        const data = await teamResponse.json();
-        setTeamData(data);
-        
-        if (leadersResponse && leadersResponse.ok) {
-          const leadersData = await leadersResponse.json();
-          setLeaders(leadersData);
+        if (leadersResult.status === 'fulfilled' && leadersResult.value) {
+          setLeaders(leadersResult.value);
         }
         
-        if (recentGamesResponse && recentGamesResponse.ok) {
-          const gamesData = await recentGamesResponse.json();
-          setRecentGames(gamesData);
+        if (recentGamesResult.status === 'fulfilled' && recentGamesResult.value) {
+          setRecentGames(recentGamesResult.value);
         }
       } catch (err) {
-        setError(err.message);
+        setError(getErrorMessage(err) || '加载球队详情失败');
         console.error('Error fetching team details:', err);
       } finally {
         setLoading(false);

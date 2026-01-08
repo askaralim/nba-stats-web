@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import GameStatsSummary from '../components/GameStatsSummary';
-import { API_BASE_URL, USE_MOCK_DATA } from '../config';
+import { USE_MOCK_DATA } from '../config';
 import { getMockGames, getMockHomeData } from '../utils/mockGameData';
 import { getChineseDate, formatDateForAPI, getTomorrowDate } from '../utils/dateUtils';
+import { apiGet, getErrorMessage } from '../utils/api';
 
 // Loading component for individual widgets
 const LoadingSpinner = ({ size = 'small' }) => (
@@ -62,15 +63,15 @@ function Home() {
           setLoadingStates(prev => ({ ...prev, todayGames: false }));
         });
     } else {
-      fetch(`${API_BASE_URL}/api/nba/games/today?date=${todayParam}&featured=true`)
-        .then(res => res.ok ? res.json() : null)
+      apiGet('/api/nba/games/today', { date: todayParam, featured: 'true' })
         .then(data => {
           setFeaturedGames(data?.featured || []);
           setOtherGames(data?.other || []);
           setAllTodayGames(data?.games || []);
           setLoadingStates(prev => ({ ...prev, todayGames: false }));
         })
-        .catch(() => {
+        .catch(err => {
+          console.error('Error fetching games:', getErrorMessage(err));
           setLoadingStates(prev => ({ ...prev, todayGames: false }));
         });
     }
@@ -98,8 +99,7 @@ function Home() {
           }));
         });
     } else {
-      fetch(`${API_BASE_URL}/api/nba/home?date=${todayParam}`)
-        .then(res => res.ok ? res.json() : null)
+      apiGet('/api/nba/home', { date: todayParam })
         .then(data => {
           // Set today's top performers
           setLeagueLeaders(data?.todayTopPerformers || { points: [], rebounds: [], assists: [] });
@@ -109,7 +109,8 @@ function Home() {
           setTopPerformers(data?.seasonLeaders || { points: [], rebounds: [], assists: [] });
           setLoadingStates(prev => ({ ...prev, topPerformers: false }));
         })
-        .catch(() => {
+        .catch(err => {
+          console.error('Error fetching home data:', getErrorMessage(err));
           setLeagueLeaders({ points: [], rebounds: [], assists: [] });
           setTopPerformers({ points: [], rebounds: [], assists: [] });
           setLoadingStates(prev => ({ 
@@ -132,25 +133,25 @@ function Home() {
           setLoadingStates(prev => ({ ...prev, upcomingGames: false }));
         });
     } else {
-      fetch(`${API_BASE_URL}/api/nba/games/today?date=${tomorrowParam}`)
-        .then(res => res.ok ? res.json() : null)
+      apiGet('/api/nba/games/today', { date: tomorrowParam })
         .then(data => {
           setUpcomingGames((data?.games || []).slice(0, 5));
           setLoadingStates(prev => ({ ...prev, upcomingGames: false }));
         })
-        .catch(() => {
+        .catch(err => {
+          console.error('Error fetching upcoming games:', getErrorMessage(err));
           setLoadingStates(prev => ({ ...prev, upcomingGames: false }));
         });
     }
 
     // 4. News (can be slower, loads independently)
-    fetch(`${API_BASE_URL}/api/nba/news`)
-      .then(res => res.ok ? res.json() : null)
+    apiGet('/api/nba/news')
       .then(data => {
         setLatestNews((data?.tweets || []).slice(0, 5));
         setLoadingStates(prev => ({ ...prev, news: false }));
       })
-      .catch(() => {
+      .catch(err => {
+        console.error('Error fetching news:', getErrorMessage(err));
         setLoadingStates(prev => ({ ...prev, news: false }));
       });
   }, []);
@@ -275,20 +276,24 @@ function Home() {
                           </div>
                         )}
                         
-                        {/* Featured Badge - positioned at top-center */}
-                        {game.featuredReason && !isLive && (
-                          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10">
+                        {/* Featured Badge - Show for featured games */}
+                        {game.featuredReason && (
+                          <div className={`absolute top-3 z-10 ${
+                            isLive 
+                              ? 'right-3' // Top-right for live games (to avoid conflict with LIVE badge)
+                              : 'left-1/2 -translate-x-1/2' // Top-center for non-live games
+                          }`}>
                             {getFeaturedBadge(game.featuredReason)}
                           </div>
                         )}
                         
-                        <div className={`flex flex-col items-center gap-3 ${isLive ? 'pt-6' : (game.featuredReason ? 'pt-6' : '')}`}>
+                        <div className={`flex flex-col items-center gap-3 ${(isLive || game.featuredReason) ? 'pt-6' : ''}`}>
                           {/* Away Team */}
                           <div className="flex items-center gap-3 w-full">
                             {game.awayTeam.logo && (
                               <img
                                 src={game.awayTeam.logo}
-                                alt={game.awayTeam.teamName}
+                                alt={game.awayTeam.name || game.awayTeam.teamName}
                                 className="w-10 h-10 object-contain flex-shrink-0"
                                 onError={(e) => {
                                   e.target.style.display = 'none';
@@ -299,7 +304,7 @@ function Home() {
                               <div className={`text-sm font-semibold truncate transition-colors ${
                                 isLive ? 'text-white' : 'text-white group-hover:text-[#1d9bf0]'
                               }`}>
-                                {game.awayTeam.teamCity} {game.awayTeam.teamName}
+                                {game.awayTeam.city || game.awayTeam.teamCity} {game.awayTeam.name || game.awayTeam.teamName}
                               </div>
                             </div>
                             {game.awayTeam.score !== null && (
@@ -335,7 +340,7 @@ function Home() {
                             {game.homeTeam.logo && (
                               <img
                                 src={game.homeTeam.logo}
-                                alt={game.homeTeam.teamName}
+                                alt={game.homeTeam.name || game.homeTeam.teamName}
                                 className="w-10 h-10 object-contain flex-shrink-0"
                                 onError={(e) => {
                                   e.target.style.display = 'none';
@@ -346,7 +351,7 @@ function Home() {
                               <div className={`text-sm font-semibold truncate transition-colors ${
                                 isLive ? 'text-white' : 'text-white group-hover:text-[#1d9bf0]'
                               }`}>
-                                {game.homeTeam.teamCity} {game.homeTeam.teamName}
+                                {game.homeTeam.city || game.homeTeam.teamCity} {game.homeTeam.name || game.homeTeam.teamName}
                               </div>
                             </div>
                             {game.homeTeam.score !== null && (
@@ -431,7 +436,7 @@ function Home() {
                             {game.awayTeam.logo && (
                               <img
                                 src={game.awayTeam.logo}
-                                alt={game.awayTeam.teamName}
+                                alt={game.awayTeam.name || game.awayTeam.teamName}
                                 className="w-8 h-8 object-contain flex-shrink-0"
                                 onError={(e) => {
                                   e.target.style.display = 'none';
@@ -442,7 +447,7 @@ function Home() {
                               <div className={`text-sm font-medium truncate transition-colors text-center ${
                                 isLive ? 'text-white' : 'text-white group-hover:text-[#1d9bf0]'
                               }`}>
-                                {game.awayTeam.teamCity} {game.awayTeam.teamName}
+                                {game.awayTeam.city || game.awayTeam.teamCity} {game.awayTeam.name || game.awayTeam.teamName}
                               </div>
                             </div>
                             {game.awayTeam.score !== null && (
@@ -478,7 +483,7 @@ function Home() {
                             {game.homeTeam.logo && (
                               <img
                                 src={game.homeTeam.logo}
-                                alt={game.homeTeam.teamName}
+                                alt={game.homeTeam.name || game.homeTeam.teamName}
                                 className="w-8 h-8 object-contain flex-shrink-0"
                                 onError={(e) => {
                                   e.target.style.display = 'none';
@@ -489,7 +494,7 @@ function Home() {
                               <div className={`text-sm font-medium truncate transition-colors text-center ${
                                 isLive ? 'text-white' : 'text-white group-hover:text-[#1d9bf0]'
                               }`}>
-                                {game.homeTeam.teamCity} {game.homeTeam.teamName}
+                                {game.homeTeam.city || game.homeTeam.teamCity} {game.homeTeam.name || game.homeTeam.teamName}
                               </div>
                             </div>
                             {game.homeTeam.score !== null && (

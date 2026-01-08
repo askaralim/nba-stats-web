@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { API_BASE_URL } from '../config';
+import { apiGet, getErrorMessage } from '../utils/api';
 
 function PlayerStats() {
   const [topPlayersByStat, setTopPlayersByStat] = useState({});
@@ -17,22 +17,18 @@ function PlayerStats() {
     try {
       setError(null);
       setLoading(true);
-      const params = new URLSearchParams({
+      const params = {
         season: filters.season,
         position: filters.position,
         conference: filters.conference,
         limit: '100' // Get more players for better stat sections
-      });
+      };
 
-      const response = await fetch(`${API_BASE_URL}/api/nba/stats/players?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error('加载球员数据失败');
-      }
-      const data = await response.json();
+      const data = await apiGet('/api/nba/stats/players', params);
       setTopPlayersByStat(data.topPlayersByStat || {});
       setMetadata(data.metadata || {});
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err) || '加载球员数据失败');
       console.error('Error fetching player stats:', err);
     } finally {
       setLoading(false);

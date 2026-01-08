@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
 import TeamStandingsSkeleton from '../components/TeamStandingsSkeleton';
-import { API_BASE_URL } from '../config';
+import { apiGet, getErrorMessage } from '../utils/api';
 
 function TeamsList() {
   const [standings, setStandings] = useState(null);
@@ -15,14 +15,10 @@ function TeamsList() {
       setError(null);
       setLoading(true);
       
-      const response = await fetch(`${API_BASE_URL}/api/nba/standings`);
-      if (!response.ok) {
-        throw new Error('加载排名失败');
-      }
-      const data = await response.json();
+      const data = await apiGet('/api/nba/standings');
       setStandings(data);
     } catch (err) {
-      setError(err.message);
+      setError(getErrorMessage(err) || '加载排名失败');
       console.error('Error fetching standings:', err);
     } finally {
       setLoading(false);
