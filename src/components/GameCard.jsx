@@ -250,12 +250,7 @@ const GameCard = memo(function GameCard({ game }) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span>
-            {new Date(game.gameEt).toLocaleString('zh-CN', {
-                      hour: '2-digit',
-              minute: '2-digit',
-                      timeZone: 'Asia/Shanghai',
-                      hour12: false
-            })}
+                    {game.gameEtFormatted?.time || game.gameEt}
                   </span>
                 </div>
               </motion.div>

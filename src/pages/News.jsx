@@ -1,61 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiGet, getErrorMessage } from '../utils/api';
 
-/**
- * Format timestamp to human-friendly format
- * @param {string} iso - ISO date string
- * @returns {string} Human-friendly date string
- */
-const formatDate = (iso) => {
-  if (!iso) return '';
-  
-  const date = new Date(iso);
-  const now = new Date();
-  const diff = now - date; // milliseconds
-  
-  // Less than 1 minute ago
-  if (diff < 60000) {
-    return '刚刚';
-  }
-  
-  // Less than 1 hour ago - show minutes
-  if (diff < 3600000) {
-    const minutes = Math.floor(diff / 60000);
-    return `${minutes}分钟前`;
-  }
-  
-  // Less than 24 hours ago - show hours
-  if (diff < 86400000) {
-    const hours = Math.floor(diff / 3600000);
-    return `${hours}小时前`;
-  }
-  
-  // Yesterday
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  if (
-    date.getDate() === yesterday.getDate() &&
-    date.getMonth() === yesterday.getMonth() &&
-    date.getFullYear() === yesterday.getFullYear()
-  ) {
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `昨天 ${hours}:${minutes}`;
-  }
-  
-  // Less than 7 days ago - show days
-  if (diff < 604800000) {
-    const days = Math.floor(diff / 86400000);
-    return `${days}天前`;
-  }
-  
-  // Older than a week - show full date
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-};
+// Date formatting is now handled by backend - use timestampFormatted.display from API response
 
 function News() {
   const [tweets, setTweets] = useState([]);
@@ -81,7 +27,7 @@ function News() {
         setLoading(true);
         
         console.log('Fetching news from API...');
-        const data = await apiGet('/api/nba/news');
+        const data = await apiGet('/api/v1/nba/news');
         console.log(`Received ${data.tweets?.length || 0} tweets`);
         setTweets(data.tweets || []);
       } catch (err) {
@@ -200,7 +146,7 @@ function News() {
                     </span>
                     {tweet.timestamp && (
                       <span className="text-[#71767a] text-sm leading-tight">
-                        · {formatDate(tweet.timestamp)}
+                        · {tweet.timestampFormatted?.display || tweet.timestamp}
                       </span>
                     )}
                   </div>

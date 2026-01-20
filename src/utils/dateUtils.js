@@ -1,11 +1,13 @@
 /**
  * Date Utility Functions
- * Shared date formatting utilities for frontend
- * Note: Date conversion logic could be moved to backend for iOS compatibility
+ * Minimal date utilities for frontend
+ * Note: Date formatting is now handled by backend - use formatted dates from API responses
+ * Only keeping utilities needed for API calls and date navigation
  */
 
 /**
  * Get current date in Chinese timezone
+ * Used for date navigation and API date parameter conversion
  * @returns {Date} Date object representing today in Chinese timezone
  */
 export function getChineseDate() {
@@ -18,6 +20,7 @@ export function getChineseDate() {
 /**
  * Format date for API (YYYYMMDD)
  * Converts Chinese date to US Eastern timezone date for ESPN API
+ * This is still needed for API calls - backend doesn't handle date parameter conversion
  * @param {Date} chineseDate - Date in Chinese timezone
  * @returns {string} Date string in YYYYMMDD format for API
  */
@@ -38,19 +41,6 @@ export function formatDateForAPI(chineseDate) {
   
   const [usYear, usMonth, usDay] = usEasternDateStr.split('-');
   return `${usYear}${String(usMonth).padStart(2, '0')}${String(usDay).padStart(2, '0')}`;
-}
-
-/**
- * Format date for display in Chinese format (yyyy-mm-dd 星期X)
- * @param {Date} date - Date object
- * @returns {string} Formatted date string
- */
-export function formatDateForDisplay(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const weekday = date.toLocaleString('zh-CN', { weekday: 'long' });
-  return `${year}-${month}-${day} ${weekday}`;
 }
 
 /**

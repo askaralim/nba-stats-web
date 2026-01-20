@@ -15,7 +15,7 @@ function TeamsList() {
       setError(null);
       setLoading(true);
       
-      const data = await apiGet('/api/nba/standings');
+      const data = await apiGet('/api/v1/nba/standings');
       setStandings(data);
     } catch (err) {
       setError(getErrorMessage(err) || '加载排名失败');

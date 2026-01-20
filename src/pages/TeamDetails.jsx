@@ -20,9 +20,9 @@ function TeamDetails() {
         
         // Fetch all data in parallel using apiGet utility
         const [teamDataResult, leadersResult, recentGamesResult] = await Promise.allSettled([
-          apiGet(`/api/nba/teams/${teamAbbreviation}`),
-          apiGet(`/api/nba/teams/${teamAbbreviation}/leaders`).catch(() => null),
-          apiGet(`/api/nba/teams/${teamAbbreviation}/recent-games`, { seasontype: '2' }).catch(() => null)
+          apiGet(`/api/v1/nba/teams/${teamAbbreviation}`),
+          apiGet(`/api/v1/nba/teams/${teamAbbreviation}/leaders`).catch(() => null),
+          apiGet(`/api/v1/nba/teams/${teamAbbreviation}/recent-games`, { seasontype: '2' }).catch(() => null)
         ]);
         
         if (teamDataResult.status === 'fulfilled') {
@@ -267,7 +267,7 @@ function TeamDetails() {
                           </span>
                         </div>
                         <div className="text-xs text-[#71767a] mt-1">
-                          {new Date(game.date).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
+                          {game.dateFormatted?.shortDate || game.date}
                         </div>
                       </div>
                     </div>
@@ -313,12 +313,7 @@ function TeamDetails() {
                         </span>
                       </div>
                       <div className="text-xs text-[#71767a] mt-1">
-                        {new Date(game.date).toLocaleDateString('zh-CN', { 
-                          month: 'short', 
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
+                        {game.dateFormatted?.shortDate || game.date}
                       </div>
                     </div>
                     <div className="text-xs text-[#71767a]">

@@ -20,22 +20,11 @@ export function calculateGameStats(games) {
   // In progress games (status === 2)
   const inProgress = games.filter(game => game.gameStatus === 2).length;
   
-  // Exciting games: completed games with score difference <= 5 points
-  const exciting = games.filter(game => {
-    if (game.gameStatus !== 3) return false; // Only completed games
-    if (game.awayTeam?.score === null || game.homeTeam?.score === null) return false;
-    const scoreDiff = Math.abs(game.awayTeam.score - game.homeTeam.score);
-    return scoreDiff <= 5;
-  }).length;
+  // Exciting games: use isClosest flag from API (already calculated on backend)
+  const exciting = games.filter(game => game.isClosest === true).length;
   
-  // Overtime games: period > 4 or status text contains "ot"/"overtime"
-  const overtime = games.filter(game => {
-    return game.period > 4 || 
-           (game.gameStatusText && (
-             game.gameStatusText.toLowerCase().includes('ot') ||
-             game.gameStatusText.toLowerCase().includes('overtime')
-           ));
-  }).length;
+  // Overtime games: use isOvertime flag from API (already calculated on backend)
+  const overtime = games.filter(game => game.isOvertime === true).length;
 
   return {
     total,

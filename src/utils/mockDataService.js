@@ -12,7 +12,7 @@ import { getMockGames, getMockHomeData } from './mockGameData';
  * @returns {Promise<Response>} Mock response
  */
 export async function mockFetchGames(url) {
-  if (url.includes('/api/nba/games/today')) {
+  if (url.includes('/api/v1/nba/games/today') || url.includes('/api/nba/games/today')) {
     const data = await getMockGames();
     return {
       ok: true,
@@ -29,16 +29,33 @@ export async function mockFetchGames(url) {
 }
 
 /**
- * Mock fetch wrapper for home endpoint
+ * Mock fetch wrapper for todayTopPerformers and seasonLeaders endpoints
  * @param {string} url - API URL
  * @returns {Promise<Response>} Mock response
  */
 export async function mockFetchHome(url) {
-  if (url.includes('/api/nba/home')) {
+  if (url.includes('/api/v1/nba/todayTopPerformers') || url.includes('/api/nba/todayTopPerformers')) {
     const data = await getMockHomeData();
     return {
       ok: true,
-      json: async () => data
+      json: async () => ({ success: true, data: data.todayTopPerformers || { points: [], rebounds: [], assists: [] } })
+    };
+  }
+  
+  if (url.includes('/api/v1/nba/seasonLeaders') || url.includes('/api/nba/seasonLeaders')) {
+    const data = await getMockHomeData();
+    return {
+      ok: true,
+      json: async () => ({ success: true, data: data.seasonLeaders || { points: [], rebounds: [], assists: [] } })
+    };
+  }
+  
+  // Legacy support for /home endpoint
+  if (url.includes('/api/v1/nba/home') || url.includes('/api/nba/home')) {
+    const data = await getMockHomeData();
+    return {
+      ok: true,
+      json: async () => ({ success: true, data })
     };
   }
   
@@ -67,11 +84,13 @@ export async function enhancedFetch(url, options = {}) {
   // Use mock data
   console.log(`[MOCK DATA] Fetching: ${url}`);
   
-  if (url.includes('/api/nba/games/today')) {
+  if (url.includes('/api/v1/nba/games/today') || url.includes('/api/nba/games/today')) {
     return mockFetchGames(url);
   }
   
-  if (url.includes('/api/nba/home')) {
+  if (url.includes('/api/v1/nba/todayTopPerformers') || url.includes('/api/nba/todayTopPerformers') ||
+      url.includes('/api/v1/nba/seasonLeaders') || url.includes('/api/nba/seasonLeaders') ||
+      url.includes('/api/v1/nba/home') || url.includes('/api/nba/home')) {
     return mockFetchHome(url);
   }
   

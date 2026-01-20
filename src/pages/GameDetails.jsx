@@ -25,7 +25,7 @@ function GameDetails() {
       if (!isRefresh) {
         setLoading(true);
       }
-      const data = await apiGet(`/api/nba/games/${gameId}`);
+      const data = await apiGet(`/api/v1/nba/games/${gameId}`);
       
       // If refreshing, only update if data changed to prevent unnecessary re-renders
       if (isRefresh && gameRef.current) {
@@ -60,7 +60,7 @@ function GameDetails() {
     setSummaryError(null);
 
     try {
-      const data = await apiGet(`/api/nba/games/${gameId}/summary`);
+      const data = await apiGet(`/api/v1/nba/games/${gameId}/summary`);
       setAiSummary(data);
     } catch (err) {
       setSummaryError(getErrorMessage(err) || 'Failed to fetch AI summary');
@@ -125,6 +125,32 @@ function GameDetails() {
   }, [game]);
 
   const topPerformerObjects = getTopPerformerObjects();
+
+  // Helper function to check if there's any top performer data
+  const hasTopPerformersData = useCallback(() => {
+    if (!topPerformerObjects.team1 && !topPerformerObjects.team2) return false;
+    
+    const team1HasData = Object.values(topPerformerObjects.team1 || {}).some(
+      arr => Array.isArray(arr) && arr.length > 0
+    );
+    const team2HasData = Object.values(topPerformerObjects.team2 || {}).some(
+      arr => Array.isArray(arr) && arr.length > 0
+    );
+    
+    return team1HasData || team2HasData;
+  }, [topPerformerObjects]);
+
+  // Helper function to check if there's any boxscore player data
+  const hasBoxscoreData = useCallback(() => {
+    if (!game?.boxscore?.teams || game.boxscore.teams.length < 2) return false;
+    
+    return game.boxscore.teams.some(team => {
+      const hasStarters = team.starters && Array.isArray(team.starters) && team.starters.length > 0;
+      const hasBench = team.bench && Array.isArray(team.bench) && team.bench.length > 0;
+      const hasDidNotPlay = team.didNotPlay && Array.isArray(team.didNotPlay) && team.didNotPlay.length > 0;
+      return hasStarters || hasBench || hasDidNotPlay;
+    });
+  }, [game]);
 
   if (loading) {
     return (
@@ -309,12 +335,7 @@ function GameDetails() {
         {/* Game Time */}
         {game.gameStatus === 1 && game.gameEt && (
           <div className="text-center text-[#71767a]">
-            {new Date(game.gameEt).toLocaleString('zh-CN', {
-              hour: '2-digit',
-              minute: '2-digit',
-              timeZone: 'Asia/Shanghai',
-              hour12: false
-            })}
+            {game.gameEtFormatted?.time || game.gameEt}
           </div>
         )}
 
@@ -365,19 +386,10 @@ function GameDetails() {
                       ) : (
                         <>
                           <span className="text-xs text-[#71767a]">
-                            {seriesGame.date ? new Date(seriesGame.date).toLocaleDateString('zh-CN', {
-                              month: 'short',
-                              day: 'numeric',
-                              timeZone: 'Asia/Shanghai'
-                            }) : '未开始'}
+                            {seriesGame.dateFormatted?.shortDate || (seriesGame.date ? '未开始' : '未开始')}
                           </span>
                           <span className="text-xs text-[#71767a]">
-                            {seriesGame.date ? new Date(seriesGame.date).toLocaleTimeString('zh-CN', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              timeZone: 'Asia/Shanghai',
-                              hour12: false
-                            }) : ''}
+                            {seriesGame.dateFormatted?.time || ''}
                           </span>
                         </>
                       )}
@@ -621,7 +633,7 @@ function GameDetails() {
             )}
 
             {/* Top Performers Widget - Simplified */}
-            {game.boxscore && game.boxscore.teams && game.boxscore.teams.length >= 2 && topPerformerObjects.team1 && (
+            {game.boxscore && game.boxscore.teams && game.boxscore.teams.length >= 2 && hasTopPerformersData() && (
               <div className="bg-[#16181c]/80 backdrop-blur-xl rounded-2xl border border-[#2f3336]/50 p-6 shadow-lg shadow-black/20">
                 <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                   最佳表现
@@ -1083,7 +1095,7 @@ function GameDetails() {
       })()}
 
       {/* Boxscore */}
-      {game.boxscore && game.boxscore.teams && (
+      {hasBoxscoreData() && (
         <div className="bg-[#16181c] rounded-xl border border-[#2f3336] p-6">
           <h2 className="text-xl font-bold text-white mb-4">球员数据</h2>
           {game.boxscore.teams.map((team, teamIndex) => (

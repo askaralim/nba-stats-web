@@ -24,7 +24,7 @@ function PlayerStats() {
         limit: '100' // Get more players for better stat sections
       };
 
-      const data = await apiGet('/api/nba/stats/players', params);
+      const data = await apiGet('/api/v1/nba/stats/players', params);
       setTopPlayersByStat(data.topPlayersByStat || {});
       setMetadata(data.metadata || {});
     } catch (err) {

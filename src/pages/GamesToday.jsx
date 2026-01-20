@@ -6,7 +6,7 @@ import GameCardSkeleton from '../components/GameCardSkeleton';
 import GameStatsSummary from '../components/GameStatsSummary';
 import { USE_MOCK_DATA } from '../config';
 import { getMockGames } from '../utils/mockGameData';
-import { getChineseDate, formatDateForAPI, formatDateForDisplay, isSameDay } from '../utils/dateUtils';
+import { getChineseDate, formatDateForAPI, isSameDay } from '../utils/dateUtils';
 import { apiGet, getErrorMessage } from '../utils/api';
 
 function GamesToday() {
@@ -56,7 +56,7 @@ function GamesToday() {
         if (filters.overtime) params.overtime = 'true';
         if (filters.marquee) params.marquee = 'true';
         
-        data = await apiGet('/api/nba/games/today', params);
+        data = await apiGet('/api/v1/nba/games/today', params);
       }
       const newGames = data.games || [];
 
@@ -263,7 +263,11 @@ function GamesToday() {
                   <span className={`relative flex items-center gap-2 transition-all duration-200 ${
                     isSelected ? '' : 'group-hover:brightness-110'
                   }`}>
-                    {formatDateForDisplay(dateItem)}
+                    {dateItem.toLocaleDateString('zh-CN', {
+                      month: 'short',
+                      day: 'numeric',
+                      weekday: 'short'
+                    })}
                     {loading && isSelected && (
                       <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -313,7 +317,12 @@ function GamesToday() {
         <h1 className="text-3xl font-bold text-white mb-2">NBA比赛</h1>
         {selectedDate && (
           <p className="text-[#71767a]">
-            {formatDateForDisplay(selectedDate)}
+            {selectedDate.toLocaleDateString('zh-CN', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              weekday: 'long'
+            })}
           </p>
         )}
       </div>

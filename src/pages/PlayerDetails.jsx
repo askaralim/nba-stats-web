@@ -22,12 +22,12 @@ function PlayerDetails() {
         setLoading(true);
         
         const [details, bio, currentStats, regularStats, advancedStatsData, gameLog] = await Promise.all([
-          apiGet(`/api/nba/players/${playerId}`).catch(() => null),
-          apiGet(`/api/nba/players/${playerId}/bio`).catch(() => null),
-          apiGet(`/api/nba/players/${playerId}/stats/current`).catch(() => null),
-          apiGet(`/api/nba/players/${playerId}/stats`).catch(() => null),
-          apiGet(`/api/nba/players/${playerId}/stats/advanced`).catch(() => null),
-          apiGet(`/api/nba/players/${playerId}/gamelog`).catch(() => null)
+          apiGet(`/api/v1/nba/players/${playerId}`).catch(() => null),
+          apiGet(`/api/v1/nba/players/${playerId}/bio`).catch(() => null),
+          apiGet(`/api/v1/nba/players/${playerId}/stats/current`).catch(() => null),
+          apiGet(`/api/v1/nba/players/${playerId}/stats`).catch(() => null),
+          apiGet(`/api/v1/nba/players/${playerId}/stats/advanced`).catch(() => null),
+          apiGet(`/api/v1/nba/players/${playerId}/gamelog`).catch(() => null)
         ]);
 
         setPlayerDetails(details);
@@ -253,11 +253,11 @@ function PlayerDetails() {
               </thead>
               <tbody>
                 {last5Games.events.map((event, index) => {
-                  const gameDate = event.gameDate ? new Date(event.gameDate) : null;
-                  const formattedDate = gameDate ? gameDate.toLocaleDateString('zh-CN', { 
+                  // Use formatted date from backend if available, otherwise format locally
+                  const formattedDate = event.gameDateFormatted?.shortDate || (event.gameDate ? new Date(event.gameDate).toLocaleDateString('zh-CN', { 
                     month: '2-digit', 
                     day: '2-digit' 
-                  }) : '-';
+                  }) : '-');
                   
                   // Get score and result
                   const score = event.score || '-';

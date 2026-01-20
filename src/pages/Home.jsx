@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import GameStatsSummary from '../components/GameStatsSummary';
 import { USE_MOCK_DATA } from '../config';
-import { getMockGames, getMockHomeData } from '../utils/mockGameData';
+import { getMockGames } from '../utils/mockGameData';
 import { getChineseDate, formatDateForAPI, getTomorrowDate } from '../utils/dateUtils';
 import { apiGet, getErrorMessage } from '../utils/api';
 
@@ -63,7 +63,7 @@ function Home() {
           setLoadingStates(prev => ({ ...prev, todayGames: false }));
         });
     } else {
-      apiGet('/api/nba/games/today', { date: todayParam, featured: 'true' })
+      apiGet('/api/v1/nba/games/today', { date: todayParam, featured: 'true' })
         .then(data => {
           setFeaturedGames(data?.featured || []);
           setOtherGames(data?.other || []);
@@ -76,49 +76,56 @@ function Home() {
         });
     }
 
-    // 2. Home page data (today's top performers + season leaders)
+    // 2. Today's top performers and season leaders (fetch independently)
     if (USE_MOCK_DATA) {
-      // Use mock data for local testing
-      getMockHomeData()
-        .then(data => {
-          // Set today's top performers
-          setLeagueLeaders(data?.todayTopPerformers || { points: [], rebounds: [], assists: [] });
-          setLoadingStates(prev => ({ ...prev, leagueLeaders: false }));
-          
-          // Set season leaders
-          setTopPerformers(data?.seasonLeaders || { points: [], rebounds: [], assists: [] });
-          setLoadingStates(prev => ({ ...prev, topPerformers: false }));
-        })
-        .catch(() => {
-          setLeagueLeaders({ points: [], rebounds: [], assists: [] });
-          setTopPerformers({ points: [], rebounds: [], assists: [] });
-          setLoadingStates(prev => ({ 
-            ...prev, 
-            leagueLeaders: false, 
-            topPerformers: false 
-          }));
-        });
+      // Use mock data for local testing - fetch separately like real API
+      Promise.all([
+        apiGet('/api/v1/nba/todayTopPerformers', { date: todayParam })
+          .then(data => {
+            setLeagueLeaders(data || { points: [], rebounds: [], assists: [] });
+            setLoadingStates(prev => ({ ...prev, leagueLeaders: false }));
+          })
+          .catch(err => {
+            console.error('Error fetching mock today top performers:', getErrorMessage(err));
+            setLeagueLeaders({ points: [], rebounds: [], assists: [] });
+            setLoadingStates(prev => ({ ...prev, leagueLeaders: false }));
+          }),
+        apiGet('/api/v1/nba/seasonLeaders')
+          .then(data => {
+            setTopPerformers(data || { points: [], rebounds: [], assists: [] });
+            setLoadingStates(prev => ({ ...prev, topPerformers: false }));
+          })
+          .catch(err => {
+            console.error('Error fetching mock season leaders:', getErrorMessage(err));
+            setTopPerformers({ points: [], rebounds: [], assists: [] });
+            setLoadingStates(prev => ({ ...prev, topPerformers: false }));
+          })
+      ]);
     } else {
-      apiGet('/api/nba/home', { date: todayParam })
-        .then(data => {
-          // Set today's top performers
-          setLeagueLeaders(data?.todayTopPerformers || { points: [], rebounds: [], assists: [] });
-          setLoadingStates(prev => ({ ...prev, leagueLeaders: false }));
-          
-          // Set season leaders
-          setTopPerformers(data?.seasonLeaders || { points: [], rebounds: [], assists: [] });
-          setLoadingStates(prev => ({ ...prev, topPerformers: false }));
-        })
-        .catch(err => {
-          console.error('Error fetching home data:', getErrorMessage(err));
-          setLeagueLeaders({ points: [], rebounds: [], assists: [] });
-          setTopPerformers({ points: [], rebounds: [], assists: [] });
-          setLoadingStates(prev => ({ 
-            ...prev, 
-            leagueLeaders: false, 
-            topPerformers: false 
-          }));
-        });
+      // Fetch today's top performers and season leaders independently
+      // This allows better error handling and independent caching
+      Promise.all([
+        apiGet('/api/v1/nba/todayTopPerformers', { date: todayParam })
+          .then(data => {
+            setLeagueLeaders(data || { points: [], rebounds: [], assists: [] });
+            setLoadingStates(prev => ({ ...prev, leagueLeaders: false }));
+          })
+          .catch(err => {
+            console.error('Error fetching today top performers:', getErrorMessage(err));
+            setLeagueLeaders({ points: [], rebounds: [], assists: [] });
+            setLoadingStates(prev => ({ ...prev, leagueLeaders: false }));
+          }),
+        apiGet('/api/v1/nba/seasonLeaders')
+          .then(data => {
+            setTopPerformers(data || { points: [], rebounds: [], assists: [] });
+            setLoadingStates(prev => ({ ...prev, topPerformers: false }));
+          })
+          .catch(err => {
+            console.error('Error fetching season leaders:', getErrorMessage(err));
+            setTopPerformers({ points: [], rebounds: [], assists: [] });
+            setLoadingStates(prev => ({ ...prev, topPerformers: false }));
+          })
+      ]);
     }
 
     // 3. Upcoming Games (tomorrow)
@@ -133,7 +140,7 @@ function Home() {
           setLoadingStates(prev => ({ ...prev, upcomingGames: false }));
         });
     } else {
-      apiGet('/api/nba/games/today', { date: tomorrowParam })
+      apiGet('/api/v1/nba/games/today', { date: tomorrowParam })
         .then(data => {
           setUpcomingGames((data?.games || []).slice(0, 5));
           setLoadingStates(prev => ({ ...prev, upcomingGames: false }));
@@ -145,7 +152,7 @@ function Home() {
     }
 
     // 4. News (can be slower, loads independently)
-    apiGet('/api/nba/news')
+    apiGet('/api/v1/nba/news')
       .then(data => {
         setLatestNews((data?.tweets || []).slice(0, 5));
         setLoadingStates(prev => ({ ...prev, news: false }));
@@ -322,12 +329,7 @@ function Home() {
                           <div className="flex flex-col items-center gap-1">
                             {game.gameStatus === 1 && game.gameEt ? (
                               <div className="text-xs text-[#71767a] text-center whitespace-nowrap">
-                                {new Date(game.gameEt).toLocaleTimeString('zh-CN', {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                  timeZone: 'Asia/Shanghai',
-                                  hour12: false
-                                })}
+                                {game.gameEtFormatted?.time || game.gameEt}
                               </div>
                             ) : (
                               <div className="text-[#71767a] text-xs">VS</div>
@@ -465,12 +467,7 @@ function Home() {
                           <div className="flex flex-col items-center gap-1">
                             {game.gameStatus === 1 && game.gameEt ? (
                               <div className="text-xs text-[#71767a] text-center whitespace-nowrap">
-                                {new Date(game.gameEt).toLocaleTimeString('zh-CN', {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                  timeZone: 'Asia/Shanghai',
-                                  hour12: false
-                                })}
+                                {game.gameEtFormatted?.time || game.gameEt}
                               </div>
                             ) : (
                               <div className="text-[#71767a] text-xs">VS</div>
@@ -939,12 +936,7 @@ function Home() {
                       </p>
                       {tweet.timestamp && (
                         <div className="text-xs text-[#71767a] mt-1">
-                          {new Date(tweet.timestamp).toLocaleDateString('zh-CN', {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                          {tweet.timestampFormatted?.display || tweet.timestamp}
                         </div>
                       )}
                     </div>
@@ -1035,13 +1027,7 @@ function Home() {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      {new Date(game.gameEt).toLocaleString('zh-CN', {
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        timeZone: 'Asia/Shanghai'
-                      })}
+                      {game.gameEtFormatted?.dateTime || game.gameEt}
                     </div>
                   )}
                 </Link>
